@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="16dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <ImageView
+            android:id="@+id/image_notification_favorite"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:src="@drawable/ic_star_filled"
+            tools:ignore="ContentDescription" />
+
+        <TextView
+            android:id="@+id/textview_notification_category"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:background="@drawable/shape_notification_category_tag"
+            android:paddingStart="8dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="4dp"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@+id/textview_notification_date"
+            app:layout_constraintStart_toEndOf="@+id/image_notification_favorite"
+            app:layout_constraintTop_toTopOf="@+id/textview_notification_date"
+            tools:text="학사공지" />
+
+        <TextView
+            android:id="@+id/textview_notification_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/material_on_surface_disabled"
+            android:textSize="12sp"
+            app:layout_constraintBaseline_toBaselineOf="@+id/textview_notification_category"
+            app:layout_constraintStart_toEndOf="@+id/textview_notification_category"
+            tools:text="2024.03.20" />
+
+        <TextView
+            android:id="@+id/textview_notification_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/textview_notification_category"
+            app:layout_constraintTop_toBottomOf="@+id/textview_notification_category"
+            tools:text="2024학년도 1학기 중간고사 일정 안내" />
+
+        <TextView
+            android:id="@+id/textview_notification_description"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textColor="@color/material_on_surface_medium_emphasis"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/textview_notification_title"
+            app:layout_constraintTop_toBottomOf="@+id/textview_notification_title"
+            tools:text="중간고사가 4월 15일부터 19일까지 실시됩니다. 시험 시간표를 확인하시기 바랍니다." />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>
