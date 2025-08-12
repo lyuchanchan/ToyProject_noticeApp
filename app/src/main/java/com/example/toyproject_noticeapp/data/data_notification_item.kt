@@ -8,3 +8,5 @@ data class DataNotificationItem(
     val description: String,
     val isFavorite: Boolean
 )
+
+
