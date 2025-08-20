@@ -3,7 +3,6 @@ package com.example.toyproject_noticeapp
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.example.toyproject_noticeapp.databinding.ActivityMainBinding
-import com.example.toyproject_noticeapp.ui.home.HomeMainFragment
 
 class MainActivity : AppCompatActivity() {
 
@@ -14,11 +13,8 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 앱이 처음 시작될 때만 HomeMainFragment를 표시합니다.
-        if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.nav_host_fragment, HomeMainFragment())
-                .commit()
-        }
+        // 프래그먼트를 수동으로 띄우는 if 블록을 완전히 삭제합니다.
+        // 이제부터는 activity_main.xml에 연결된 nav_graph가
+        // 시작 화면(HomeMainFragment)을 자동으로 띄워줍니다.
     }
 }
