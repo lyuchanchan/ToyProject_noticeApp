@@ -43,13 +43,18 @@ class HomeMainFragment : Fragment() {
         }
     }
 
+
     private fun setupToolbar() {
         binding.toolbarHomeMain.toolbar.title = "홈"
         binding.toolbarHomeMain.toolbar.inflateMenu(R.menu.toolbar_home_menu)
         binding.toolbarHomeMain.toolbar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
+                // ⬇️ 검색 아이콘 클릭 케이스 추가
+                R.id.action_search -> {
+                    findNavController().navigate(R.id.action_home_to_search)
+                    true
+                }
                 R.id.action_settings -> {
-                    // Toast 메시지 대신 내비게이션 액션을 실행
                     findNavController().navigate(R.id.action_home_to_settings)
                     true
                 }

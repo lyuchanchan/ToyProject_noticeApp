@@ -1,6 +1,7 @@
 package com.example.toyproject_noticeapp.ui.setting
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,6 +16,7 @@ import com.example.toyproject_noticeapp.adapter.SettingSubscriptionAdapter
 import com.example.toyproject_noticeapp.data.Keyword
 import com.example.toyproject_noticeapp.data.Subscription
 import com.example.toyproject_noticeapp.databinding.FragmentSettingMainBinding
+import com.example.toyproject_noticeapp.ui.login.LoginActivity
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.google.android.flexbox.JustifyContent
@@ -113,7 +115,18 @@ class SettingMainFragment : Fragment() {
 
     private fun setupClickListeners() {
         binding.buttonSettingLogout.setOnClickListener {
-            Toast.makeText(requireContext(), "로그아웃 클릭됨", Toast.LENGTH_SHORT).show()
+            // SharedPreferences에서 사용자 정보 삭제
+            val sharedPreferences = requireActivity().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+            sharedPreferences.edit().clear().apply()
+
+            // ##### 이 부분이 수정되었습니다! #####
+            // activity 대신 requireActivity()를 사용합니다.
+            val intent = Intent(requireActivity(), LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+
+            // MainActivity 종료
+            requireActivity().finish()
         }
 
         binding.buttonAddIncludeKeyword.setOnClickListener {

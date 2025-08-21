@@ -1,4 +1,4 @@
-package com.example.toyproject_noticeapp.ui // 패키지 이름은 본인 프로젝트에 맞게 확인하세요
+package com.example.toyproject_noticeapp.ui.login // 패키지 이름은 본인 프로젝트에 맞게 확인하세요
 
 import android.content.Intent
 import android.os.Bundle

@@ -16,6 +16,9 @@
         <action
             android:id="@+id/action_home_to_notification"
             app:destination="@id/fragmentNotificationMain" />
+        <action
+            android:id="@+id/action_home_to_search"
+            app:destination="@id/searchMainFragment" />
     </fragment>
 
     <fragment
@@ -29,5 +32,11 @@
         android:name="com.example.toyproject_noticeapp.ui.notification.FragmentNotificationMain"
         android:label="FragmentNotificationMain"
         tools:layout="@layout/fragment_notification_main"/>
+
+    <fragment
+        android:id="@+id/searchMainFragment"
+        android:name="com.example.toyproject_noticeapp.ui.search.SearchMainFragment"
+        android:label="fragment_search_main"
+        tools:layout="@layout/fragment_search_main" />
 
 </navigation>
