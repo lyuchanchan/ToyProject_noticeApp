@@ -36,27 +36,16 @@
                 android:textStyle="bold"
                 android:textColor="@color/black"/>
 
-            <GridLayout
-                android:id="@+id/gridlayout_home_shortcuts"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerview_home_shortcuts"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:columnCount="3"
-                android:useDefaultMargins="true">
-
-                <Button style="@style/Widget.App.Button.Shortcut" android:text="홈페이지" />
-                <Button style="@style/Widget.App.Button.Shortcut" android:text="학사일정" />
-                <Button style="@style/Widget.App.Button.Shortcut" android:text="학사공지" />
-                <Button style="@style/Widget.App.Button.Shortcut" android:text="공지사항" />
-                <Button style="@style/Widget.App.Button.Shortcut" android:text="행사공지" />
-                <Button style="@style/Widget.App.Button.Shortcut" android:text="장학일정" />
-                <Button style="@style/Widget.App.Button.Shortcut" android:text="취업공지" />
-                <Button style="@style/Widget.App.Button.Shortcut" android:text="식단표" />
-                <Button style="@style/Widget.App.Button.Shortcut" android:text="셔틀버스" />
-                <Button style="@style/Widget.App.Button.Shortcut" android:text="AISW공지" />
-                <Button style="@style/Widget.App.Button.Shortcut" android:text="SW중심대학" />
-            </GridLayout>
-
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                app:spanCount="3"
+                tools:listitem="@layout/item_home_shortcut"
+                tools:itemCount="11"/>
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/layout_home_recent_header"
                 android:layout_width="match_parent"

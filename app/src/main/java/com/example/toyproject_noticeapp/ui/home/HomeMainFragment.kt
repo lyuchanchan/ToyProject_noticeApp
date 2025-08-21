@@ -6,9 +6,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.toyproject_noticeapp.R
 import com.example.toyproject_noticeapp.adapter.HomeNoticeAdapter
+import com.example.toyproject_noticeapp.adapter.HomeShortcutAdapter
 import com.example.toyproject_noticeapp.data.Notice
+import com.example.toyproject_noticeapp.data.Shortcut
 import com.example.toyproject_noticeapp.databinding.FragmentHomeMainBinding
 
 class HomeMainFragment : Fragment() {
@@ -27,24 +32,50 @@ class HomeMainFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 1. 툴바 설정 (필요 시)
-        // binding.toolbarHomeMain. ...
+        setupToolbar()
+        setupShortcutRecyclerView()
+        setupRecentNoticeRecyclerView()
 
-        // 2. 바로가기 버튼 리스너 (필요 시)
-        // 예: binding.gridlayoutHomeShortcuts.getChildAt(0).setOnClickListener { ... }
-
-        // 3. '최근 알림' 헤더 클릭 리스너 설정
+        // '최근 알림' 헤더 클릭 리스너
         binding.layoutHomeRecentHeader.setOnClickListener {
-            // TODO: 알림 페이지로 넘어가는 로직 구현
-            Toast.makeText(requireContext(), "'더보기' 클릭됨. 알림 페이지로 이동합니다.", Toast.LENGTH_SHORT).show()
+            // 기존 Toast 메시지 대신 아래 코드로 변경
+            findNavController().navigate(R.id.action_home_to_notification)
         }
-
-        // 4. RecyclerView 설정
-        setupRecyclerView()
     }
 
-    private fun setupRecyclerView() {
-        // 임시 데이터 생성 (나중에 실제 데이터로 교체)
+    private fun setupToolbar() {
+        binding.toolbarHomeMain.toolbar.title = "홈"
+        binding.toolbarHomeMain.toolbar.inflateMenu(R.menu.toolbar_home_menu)
+        binding.toolbarHomeMain.toolbar.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.action_settings -> {
+                    // Toast 메시지 대신 내비게이션 액션을 실행
+                    findNavController().navigate(R.id.action_home_to_settings)
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun setupShortcutRecyclerView() {
+        val shortcutList = listOf(
+            Shortcut("홈페이지"), Shortcut("학사일정"), Shortcut("학사공지"),
+            Shortcut("공지사항"), Shortcut("행사공지"), Shortcut("장학일정"),
+            Shortcut("취업공지"), Shortcut("식단표"), Shortcut("셔틀버스"),
+            Shortcut("AISW공지"), Shortcut("SW중심대학")
+        )
+        val shortcutAdapter = HomeShortcutAdapter(shortcutList) { shortcut ->
+            Toast.makeText(requireContext(), "${shortcut.name} 클릭됨", Toast.LENGTH_SHORT).show()
+        }
+        binding.recyclerviewHomeShortcuts.adapter = shortcutAdapter
+        binding.recyclerviewHomeShortcuts.layoutManager = GridLayoutManager(context, 3)
+    }
+
+    // ### 바로 이 함수입니다! ###
+    // '최근 알림' 목록에 임시 데이터를 넣고 RecyclerView에 연결합니다.
+    private fun setupRecentNoticeRecyclerView() {
+        // 임시 데이터 생성
         val noticeList = listOf(
             Notice("학사공지", "2024학년도 2학기 기말고사 일정 안내", "2024-12-15", true),
             Notice("시설공지", "겨울방학 도서관 운영시간 변경 안내", "2024-12-14", true),
@@ -53,11 +84,7 @@ class HomeMainFragment : Fragment() {
 
         val noticeAdapter = HomeNoticeAdapter(noticeList)
         binding.recyclerviewHomeNotifications.apply {
-            // 리사이클러뷰 성능 최적화
-            setHasFixedSize(true)
-            // 레이아웃 매니저 설정
-            layoutManager = LinearLayoutManager(requireContext())
-            // 어댑터 연결
+            layoutManager = LinearLayoutManager(context)
             adapter = noticeAdapter
         }
     }

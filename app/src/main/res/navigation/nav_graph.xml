@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/homeMainFragment">
+
+    <fragment
+        android:id="@+id/homeMainFragment"
+        android:name="com.example.toyproject_noticeapp.ui.home.HomeMainFragment"
+        android:label="fragment_home_main"
+        tools:layout="@layout/fragment_home_main" >
+        <action
+            android:id="@+id/action_home_to_settings"
+            app:destination="@id/settingMainFragment" />
+        <action
+            android:id="@+id/action_home_to_notification"
+            app:destination="@id/fragmentNotificationMain" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/settingMainFragment"
+        android:name="com.example.toyproject_noticeapp.ui.setting.SettingMainFragment"
+        android:label="fragment_setting_main"
+        tools:layout="@layout/fragment_setting_main" />
+
+    <fragment
+        android:id="@+id/fragmentNotificationMain"
+        android:name="com.example.toyproject_noticeapp.ui.notification.FragmentNotificationMain"
+        android:label="FragmentNotificationMain"
+        tools:layout="@layout/fragment_notification_main"/>
+
+</navigation>
