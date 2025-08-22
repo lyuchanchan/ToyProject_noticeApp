@@ -35,12 +35,14 @@ class SearchMainFragment : Fragment() {
         setupSearchEditText()
     }
 
+    // ##### 이 부분이 수정되었습니다! #####
     // 실제 앱에서는 모든 공지사항 목록을 불러와야 함
     private fun loadDummyData() {
         allNotifications.addAll(listOf(
-            DataNotificationItem(1, "학사공지", "2025-08-20", "2학기 수강신청 최종 정정 안내", "수강신청 최종 정정 기간은...", false),
-            DataNotificationItem(2, "장학공지", "2025-08-19", "국가장학금 2차 신청 안내", "2차 신청 기간은...", true),
-            DataNotificationItem(3, "공지사항", "2025-08-18", "도서관 운영시간 변경 안내", "시험 기간 도서관 운영시간이...", false)
+            // 각 항목의 끝에 url 값을 추가합니다.
+            DataNotificationItem(1, "학사공지", "2025-08-20", "2학기 수강신청 최종 정정 안내", "수강신청 최종 정정 기간은...", false, "https://www.hs.ac.kr/kor/4953/subview.do?enc=Zm5jdDF8QEB8JTJGYmJzJTJGa29yJTJGMjQlMkYxNTA2NTUlMkZhcnRjbFZpZXcuZG8lM0ZwYWdlJTNEMSUyNnNyY2hDb2x1bW4lM0QlMjZzcmNoV3JkJTNEJTI2YmJzQ2xTZXElM0QlMjZiYnNPcGVuV3JkU2VxJTNEJTI2cmdzQmduZGVTdHIlM0QlMjZyZ3NFbmRkZVN0ciUzRCUyNmlzVmlld01pbmUlM0RmYWxzZSUyNnBhc3N3b3JkJTNEJTI2"),
+            DataNotificationItem(2, "장학공지", "2025-08-19", "국가장학금 2차 신청 안내", "2차 신청 기간은...", true, ""),
+            DataNotificationItem(3, "공지사항", "2025-08-18", "도서관 운영시간 변경 안내", "시험 기간 도서관 운영시간이...", false, "")
         ))
     }
 
