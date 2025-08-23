@@ -25,7 +25,7 @@
             android:id="@+id/tvLoginTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="School Now"
+            android:text="Hanshin Now!"
             android:textColor="@color/text_primary"
             android:textSize="40sp"
             android:textStyle="bold" />
@@ -35,7 +35,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="한신대학교의 모든 정보를 여기서 확인하세요."
+            android:text="공지 찾느라 헤매지 말고, 여기서 한방에 👊"
             android:textColor="@color/text_secondary"
             android:textSize="16sp" />
     </LinearLayout>
@@ -75,7 +75,7 @@
             android:background="@drawable/login_edittext_background"
             android:drawableStart="@drawable/ic_person"
             android:drawablePadding="16dp"
-            android:hint="아이디를 입력하세요"
+            android:hint="이메일을 입력하세요"
             android:inputType="text"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
