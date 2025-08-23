@@ -76,18 +76,20 @@ class HomeMainFragment : Fragment() {
     }
 
     private fun setupShortcutRecyclerView() {
+        // 아이콘, 이름, URL/타입을 모두 포함하는 데이터 리스트
         val shortcutList = listOf(
-            Shortcut("홈페이지", "https://www.hs.ac.kr/kor/index.do"),
-            Shortcut("학사일정", "https://www.hs.ac.kr/kor/80/subview.do"),
-            Shortcut("학사공지", "BOARD"),
-            Shortcut("공지사항", "BOARD"),
-            Shortcut("행사공지", "BOARD"),
-            Shortcut("장학공지", "BOARD"),
-            Shortcut("취업공지", "BOARD"),
-            Shortcut("식단표", "https://www.hs.ac.kr/kor/70/subview.do"),
-            Shortcut("셔틀버스", "https://www.hs.ac.kr/kor/69/subview.do"),
-            Shortcut("AISW계열 공지사항", "BOARD")
+            Shortcut(R.drawable.home_icon_1, "홈페이지", "https://www.hs.ac.kr/kor/index.do"),
+            Shortcut(R.drawable.home_icon_calendar, "학사일정", "https://www.hs.ac.kr/kor/80/subview.do"),
+            Shortcut(R.drawable.home_icon_haksa, "학사공지", "BOARD"),
+            Shortcut(R.drawable.home_icon_chuiup, "공지사항", "BOARD"),
+            Shortcut(R.drawable.home_icon_festival, "행사공지", "BOARD"),
+            Shortcut(R.drawable.home_icon_scholarship, "장학공지", "BOARD"),
+            Shortcut(R.drawable.home_icon_check, "취업공지", "BOARD"),
+            Shortcut(R.drawable.home_icon_food, "식단표", "https://www.hs.ac.kr/kor/70/subview.do"),
+            Shortcut(R.drawable.home_icon_bus, "셔틀버스", "https://www.hs.ac.kr/kor/69/subview.do"),
+            Shortcut(R.drawable.home_icon_check, "AISW계열 공지사항", "BOARD")
         )
+
         val shortcutAdapter = HomeShortcutAdapter(shortcutList) { shortcut ->
             if (shortcut.url == "BOARD") {
                 val bundle = bundleOf("categoryName" to shortcut.name)
@@ -179,7 +181,6 @@ class HomeMainFragment : Fragment() {
         fetchHomeFavorites()
     }
 
-    // ##### 이 함수가 수정되었습니다! #####
     private fun fetchHomeFavorites() {
         val db = Firebase.firestore
         val userId = "test" // TODO: 실제 로그인된 사용자 ID로 교체
@@ -189,7 +190,6 @@ class HomeMainFragment : Fragment() {
                 if (document != null && document.exists()) {
                     val favoriteIds = document.get("favorites") as? List<String>
 
-                    // 비어있는 문자열을 제거하여 유효한 ID 목록만 필터링합니다.
                     val validFavoriteIds = favoriteIds?.filter { it.isNotBlank() }
 
                     if (validFavoriteIds != null && validFavoriteIds.isNotEmpty()) {

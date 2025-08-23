@@ -1,12 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.button.MaterialButton
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    style="@style/Widget.MaterialComponents.Button.TextButton"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
-    android:background="@drawable/shape_home_button_background"
-    android:textColor="#555555"
+    android:orientation="vertical"
     android:gravity="center"
-    android:padding="16dp"
-    android:text="바로가기 항목"/>
+    android:padding="8dp"
+    android:background="?attr/selectableItemBackground">
+
+    <ImageView
+        android:id="@+id/image_shortcut_icon"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:background="@drawable/shape_home_button_background"
+        android:scaleType="centerInside"
+        android:padding="14dp"
+        tools:src="@drawable/ic_home" />
+
+    <TextView
+        android:id="@+id/text_shortcut_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="#555555"
+        android:textSize="13sp"
+        tools:text="홈페이지" />
+
+</LinearLayout>

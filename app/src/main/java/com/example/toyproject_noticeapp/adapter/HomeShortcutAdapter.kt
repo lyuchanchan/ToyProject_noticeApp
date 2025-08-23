@@ -26,10 +26,13 @@ class HomeShortcutAdapter(
         private val binding: ItemHomeShortcutBinding,
         private val onClick: (Shortcut) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
+
         fun bind(item: Shortcut) {
-            // MaterialButton의 text를 직접 설정
-            (binding.root as? com.google.android.material.button.MaterialButton)?.text = item.name
-            binding.root.setOnClickListener {
+            // 아이콘과 텍스트를 각각의 뷰에 설정
+            binding.imageShortcutIcon.setImageResource(item.iconResId)
+            binding.textShortcutName.text = item.name
+
+            itemView.setOnClickListener {
                 onClick(item)
             }
         }
