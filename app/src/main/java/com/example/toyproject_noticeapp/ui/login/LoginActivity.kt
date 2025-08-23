@@ -1,26 +1,31 @@
 package com.example.toyproject_noticeapp.ui.login
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.toyproject_noticeapp.MainActivity
 import com.example.toyproject_noticeapp.databinding.ActivityLoginBinding
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
+    // Firebase 인증 객체 선언
+    private lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        val savedUserId = sharedPreferences.getString("user_id", null)
+        // Firebase 인증 객체 초기화
+        auth = Firebase.auth
 
-        if (savedUserId != null) {
+        // 앱 시작 시, 이미 로그인된 사용자인지 확인
+        if (auth.currentUser != null) {
             val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
             finish()
@@ -32,33 +37,34 @@ class LoginActivity : AppCompatActivity() {
         }
 
         binding.btnLogin.setOnClickListener {
-            val userId = binding.etId.text.toString().trim()
+            val email = binding.etId.text.toString().trim()
             val userPassword = binding.etPassword.text.toString().trim()
 
-            if (userId.isEmpty() || userPassword.isEmpty()) {
-                Toast.makeText(this, "아이디와 비밀번호를 모두 입력해주세요.", Toast.LENGTH_SHORT).show()
+            if (email.isEmpty() || userPassword.isEmpty()) {
+                Toast.makeText(this, "이메일과 비밀번호를 모두 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            if (userId == "test" && userPassword == "test") {
-                sharedPreferences.edit().putString("user_id", userId).apply()
-                Toast.makeText(this, "로그인 성공!", Toast.LENGTH_SHORT).show()
-                val intent = Intent(this, MainActivity::class.java)
-                startActivity(intent)
-                finish()
-            } else {
-                Toast.makeText(this, "아이디 또는 비밀번호가 일치하지 않습니다.", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        // ##### 이 부분이 추가되었습니다! #####
-        // 개발용 Skip 버튼 클릭 리스너
-        binding.tvSkip.setOnClickListener {
-            sharedPreferences.edit().putString("user_id", "dev_user").apply()
-            Toast.makeText(this, "테스트 모드로 메인 화면으로 이동합니다.", Toast.LENGTH_SHORT).show()
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
-            finish()
+            auth.signInWithEmailAndPassword(email, userPassword)
+                .addOnCompleteListener(this) { task ->
+                    if (task.isSuccessful) {
+                        val user = auth.currentUser
+                        //  바로 로그인이 아닌, 이메일 인증 여부를 확인합니다.
+                        if (user != null && user.isEmailVerified) {
+                            // 인증된 사용자만 메인 화면으로 이동
+                            Toast.makeText(this, "로그인 성공!", Toast.LENGTH_SHORT).show()
+                            val intent = Intent(this, MainActivity::class.java)
+                            startActivity(intent)
+                            finish()
+                        } else {
+                            // 인증되지 않은 사용자는 로그인을 막습니다.
+                            Toast.makeText(this, "가입 시 발송된 이메일을 확인하여 인증을 완료해주세요.", Toast.LENGTH_LONG).show()
+                        }
+                    } else {
+                        // 아이디나 비밀번호가 틀렸을 때
+                        Toast.makeText(this, "로그인 실패: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
         }
     }
 }

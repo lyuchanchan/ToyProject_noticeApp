@@ -6,4 +6,10 @@
     <color name="material_on_surface_disabled">#61000000</color>
     <color name="material_on_surface_medium_emphasis">#99000000</color>
 
+    <color name="light_gray_background">#F8F9FA</color>
+    <color name="input_field_background">#FFFFFF</color>
+    <color name="primary_brand_color">#673AB7</color>
+    <color name="text_primary">#1F2937</color>
+    <color name="text_secondary">#6B7280</color>
+    <color name="input_stroke_color">#D1D5DB</color>
 </resources>

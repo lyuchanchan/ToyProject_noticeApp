@@ -36,7 +36,8 @@ class SettingMainFragment : Fragment() {
         Subscription("행사공지", false),
         Subscription("장학공지", true),
         Subscription("취업공지", false),
-        Subscription("AISW계열 공지사항", true)
+        Subscription("AISW계열 공지사항", true),
+        Subscription("SW중심대학 공지사항", true)
     )
     private val includeKeywordList = mutableListOf(
         Keyword("장학금"),
@@ -118,14 +119,14 @@ class SettingMainFragment : Fragment() {
             val sharedPreferences = requireActivity().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
             sharedPreferences.edit().clear().apply()
 
-            // LoginActivity로 이동
+            // ##### 이 부분이 수정되었습니다! #####
+            // activity 대신 requireActivity()를 사용합니다.
             val intent = Intent(requireActivity(), LoginActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
 
-            // ##### 이 부분이 수정되었습니다! #####
-            // MainActivity를 직접 종료하는 코드를 삭제합니다.
-            // requireActivity().finish() // 이 줄 삭제
+            // MainActivity 종료
+            requireActivity().finish()
         }
 
         binding.buttonAddIncludeKeyword.setOnClickListener {
