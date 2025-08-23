@@ -1,10 +1,13 @@
 package com.example.toyproject_noticeapp.ui.notification
 
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -12,8 +15,12 @@ import com.example.toyproject_noticeapp.R
 import com.example.toyproject_noticeapp.adapter.AdapterNotificationList
 import com.example.toyproject_noticeapp.adapter.FilterAdapter
 import com.example.toyproject_noticeapp.adapter.FilterItem
+import com.example.toyproject_noticeapp.adapter.FilterType
 import com.example.toyproject_noticeapp.data.DataNotificationItem
 import com.example.toyproject_noticeapp.databinding.FragmentNotificationMainBinding
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 
 class FragmentNotificationMain : Fragment() {
 
@@ -21,8 +28,8 @@ class FragmentNotificationMain : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var notificationAdapter: AdapterNotificationList
-    private val allNotifications = mutableListOf<DataNotificationItem>() // 필터링을 위한 전체 공지 원본 리스트
-    private val filterList = mutableListOf<FilterItem>() // 필터 아이템 리스트
+    private val allNotifications = mutableListOf<DataNotificationItem>()
+    private val filterList = mutableListOf<FilterItem>()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -35,38 +42,50 @@ class FragmentNotificationMain : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 데이터가 비어있을 때만 임시 데이터를 로드하여 중복 로드를 방지
-        if (allNotifications.isEmpty()){
-            loadDummyData()
+        if (filterList.isEmpty()){
+            loadFilterData()
         }
         setupToolbar()
         setupFilterRecyclerView()
         setupNotificationRecyclerView()
-        applyFilters() // 초기 필터 적용으로 전체 목록 표시
+        fetchNoticesFromFirebase()
     }
 
-    // 임시 데이터 생성
-    private fun loadDummyData() {
-        allNotifications.addAll(listOf(
-            DataNotificationItem(1, "학사공지", "2025-08-20", "2학기 수강신청 최종 정정 안내", "수강신청 최종 정정 기간은...", false),
-            DataNotificationItem(2, "장학공지", "2025-08-19", "국가장학금 2차 신청 안내", "2차 신청 기간은...", true),
-            DataNotificationItem(3, "공지사항", "2025-08-18", "도서관 운영시간 변경 안내", "시험 기간 도서관 운영시간이...", false),
-            DataNotificationItem(4, "취업공지", "2025-08-17", "2025년 하반기 IT기업 채용설명회", "자세한 내용은...", true),
-            DataNotificationItem(5, "학사공지", "2025-08-16", "2025학년도 2학기 재입학 신청", "신청 기간 및 방법을 확인하세요.", false),
-            DataNotificationItem(6, "AISW", "2025-08-15", "AISW 트랙 설명회 개최 안내", "트랙 설명회가 개최됩니다.", false)
-        ))
-
+    // ##### 이 부분이 수정되었습니다! #####
+    private fun loadFilterData() {
+        filterList.clear()
         filterList.addAll(listOf(
-            FilterItem("전체", isSelected = true),
-            FilterItem("즐겨찾기", isFavoriteFilter = true),
-            FilterItem("학사공지"),
-            FilterItem("공지사항"),
-            FilterItem("행사공지"),
-            FilterItem("장학공지"),
-            FilterItem("취업공지"),
-            FilterItem("AISW"),
-            FilterItem("SW중심대학")
+            FilterItem("전체선택", FilterType.COMMAND),
+            FilterItem("전체해제", FilterType.COMMAND),
+            FilterItem("즐겨찾기", FilterType.FAVORITE),
+            FilterItem("공지사항", FilterType.CATEGORY, isSelected = true),
+            FilterItem("학사공지", FilterType.CATEGORY, isSelected = true),
+            FilterItem("행사공지", FilterType.CATEGORY, isSelected = true),
+            FilterItem("장학공지", FilterType.CATEGORY, isSelected = true),
+            FilterItem("취업공지", FilterType.CATEGORY, isSelected = true),
+            FilterItem("AISW계열 공지사항", FilterType.CATEGORY, isSelected = true),
+            FilterItem("SW중심대학 공지사항", FilterType.CATEGORY, isSelected = true)
         ))
+    }
+
+    private fun fetchNoticesFromFirebase() {
+        val db = Firebase.firestore
+        db.collection("notices")
+            .orderBy("id", Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener { result ->
+                allNotifications.clear()
+                for (document in result) {
+                    val notice = document.toObject(DataNotificationItem::class.java)
+                    allNotifications.add(notice)
+                }
+                applyFilters()
+                Log.d("Firestore", "Successfully fetched ${result.size()} documents.")
+            }
+            .addOnFailureListener { exception ->
+                Log.w("Firestore", "Error getting documents.", exception)
+                Toast.makeText(context, "데이터를 불러오는 데 실패했습니다.", Toast.LENGTH_SHORT).show()
+            }
     }
 
     private fun setupToolbar() {
@@ -77,19 +96,16 @@ class FragmentNotificationMain : Fragment() {
         }
     }
 
-    // 필터 RecyclerView 설정
     private fun setupFilterRecyclerView() {
         val filterAdapter = FilterAdapter(filterList) { selectedFilter ->
-            if (selectedFilter.name == "전체") {
-                filterList.forEach { it.isSelected = false }
-                selectedFilter.isSelected = true
-            } else {
-                filterList.find { it.name == "전체" }?.isSelected = false
-                selectedFilter.isSelected = !selectedFilter.isSelected
-            }
-
-            if (filterList.none { it.isSelected }) {
-                filterList.find { it.name == "전체" }?.isSelected = true
+            when (selectedFilter.type) {
+                FilterType.COMMAND -> {
+                    val shouldSelectAll = selectedFilter.name == "전체선택"
+                    filterList.filter { it.type == FilterType.CATEGORY }.forEach { it.isSelected = shouldSelectAll }
+                }
+                FilterType.FAVORITE, FilterType.CATEGORY -> {
+                    selectedFilter.isSelected = !selectedFilter.isSelected
+                }
             }
             (binding.recyclerviewNotificationFilters.adapter as FilterAdapter).notifyDataSetChanged()
             applyFilters()
@@ -97,11 +113,10 @@ class FragmentNotificationMain : Fragment() {
         binding.recyclerviewNotificationFilters.adapter = filterAdapter
     }
 
-    // 알림 목록 RecyclerView 설정
     private fun setupNotificationRecyclerView() {
         notificationAdapter = AdapterNotificationList(
             onItemClick = { notice ->
-                Toast.makeText(context, notice.title, Toast.LENGTH_SHORT).show()
+                openInAppBrowser(notice.url)
             },
             onFavoriteClick = { notice ->
                 val index = allNotifications.indexOfFirst { it.id == notice.id }
@@ -116,24 +131,36 @@ class FragmentNotificationMain : Fragment() {
         binding.recyclerviewNotificationList.layoutManager = LinearLayoutManager(context)
     }
 
-    // 선택된 필터를 기반으로 목록을 필터링하여 보여주는 함수
-    private fun applyFilters() {
-        val selectedFilters = filterList.filter { it.isSelected && it.name != "전체" }
-
-        if (selectedFilters.isEmpty()) {
-            notificationAdapter.submitList(allNotifications.toList())
-            return
+    private fun openInAppBrowser(url: String) {
+        if (url.isNotEmpty()) {
+            try {
+                val customTabsIntent = CustomTabsIntent.Builder().build()
+                customTabsIntent.launchUrl(requireContext(), Uri.parse(url))
+            } catch (e: Exception) {
+                Toast.makeText(context, "페이지를 열 수 없습니다.", Toast.LENGTH_SHORT).show()
+                e.printStackTrace()
+            }
+        } else {
+            Toast.makeText(context, "연결된 링크가 없습니다.", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun applyFilters() {
+        val isFavoriteFilterOn = filterList.find { it.type == FilterType.FAVORITE }?.isSelected ?: false
+        val selectedCategories = filterList.filter { it.type == FilterType.CATEGORY && it.isSelected }.map { it.name }
 
         var filteredList = allNotifications.toList()
 
-        val isFavoriteFilterOn = selectedFilters.any { it.isFavoriteFilter }
-        val categoryFilters = selectedFilters.filter { !it.isFavoriteFilter }.map { it.name }
+        if (isFavoriteFilterOn) {
+            filteredList = filteredList.filter { it.isFavorite }
+        }
 
-        filteredList = filteredList.filter { notice ->
-            val favoriteMatch = if (isFavoriteFilterOn) notice.isFavorite else true
-            val categoryMatch = if (categoryFilters.isNotEmpty()) categoryFilters.contains(notice.category) else true
-            favoriteMatch && categoryMatch
+        if (selectedCategories.isNotEmpty()) {
+            filteredList = filteredList.filter { notice -> selectedCategories.contains(notice.category) }
+        } else {
+            if (!isFavoriteFilterOn) {
+                filteredList = emptyList()
+            }
         }
 
         notificationAdapter.submitList(filteredList)
