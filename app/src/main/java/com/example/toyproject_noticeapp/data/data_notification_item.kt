@@ -6,7 +6,8 @@ data class DataNotificationItem(
     val date: String = "",
     val title: String = "",
     val description: String = "",
-    @JvmField // ⬅️ 이 줄을 추가하세요.
+    @JvmField
     var isFavorite: Boolean = false,
-    val url: String = ""
+    val url: String = "",
+    val viewCount: Int = 0 // ⬅️ 조회수 필드 추가
 )
