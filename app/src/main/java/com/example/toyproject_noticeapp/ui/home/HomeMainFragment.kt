@@ -24,7 +24,6 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
 class HomeMainFragment : Fragment() {
-    // ... (변수 선언 및 onCreateView는 동일)
     private var _binding: FragmentHomeMainBinding? = null
     private val binding get() = _binding!!
 
@@ -34,14 +33,62 @@ class HomeMainFragment : Fragment() {
     private val auth = FirebaseAuth.getInstance()
     private val db = Firebase.firestore
 
+    // 랜덤 문구 리스트
+    private val randomMessages = listOf(
+        "오늘도 놓치지 말고 체크✔️",
+        "캠퍼스 소식, 여기 다 있지",
+        "공지 찾기? 이제 고생 끝🙌",
+        "한신대 소식, 한신 나우에 다 모였다🙌",
+        "공지 찾기 귀찮을 땐? 한신 나우!",
+        "한신 나우 = 캠퍼스 정보 올인원 패키지🎁",
+        "오늘도 소식 체크 완료",
+        "공지부터 이벤트까지 풀세트 준비 완료⚡",
+        "한눈에 보는 캠퍼스 라이프!",
+        "오늘도 신선한 소식 배달왔습니다📦",
+        "소식은 빠르게, 학교 생활은 여유롭게✨",
+        "공지 확인은 쉽게, 스트레스는 노노✌️",
+        "공지? 난 다 모아봤어😉",
+        "놓치면 땅치고 후회할 소식들🔥",
+        "캠퍼스 소식, 누구보다 빠르게 확인!",
+        "여기만 보면 학사 인싸🧑‍🎓",
+        "공지 놓쳤다고? 그건 전설일 뿐…",
+        "모든 소식을 한눈에, 한신 나우!",
+        "한신 나우와 학교생활을 더 똑똑하게",
+        "하루를 바꾸는 작은 알림, 한신 나우!",
+        "편리하게 모은 한신대 소식",
+        "오늘의 공지, 지금 확인하세요",
+        "공지 찾는 게 귀찮아? 여기 다 있어~",
+        "학교 소식, 이제 헤매지 말고 직진👉",
+        "놓치면 ‘나만 몰랐어?’ 소리 듣는다😂",
+        "캠퍼스 인싸의 비밀: 공지 먼저 보기",
+        "공지 덕후 모드 ON!",
+        "교수님 말보다 빠른 공지 업데이트⚡",
+        "시험 공지부터 동아리 소식까지 올인원📚",
+        "중요한 건 공지 속에 다 있다😉",
+        "캠퍼스 생활 치트키, 여기 맞습니다🎯",
+        "공지? 그냥 여기 들르면 해결이지👌",
+        "공지 놓치면 F각… 그건 막아야지✋",
+        "또 나만 뒤늦게 알게 되는 건 이제 끝",
+        "한신대 공식 스포일러📢",
+        "공지 확인, 밥 먹듯이 하자🍚",
+        "공지 싹 모아봤다🙌",
+        "학교 소식 한 방 정리💡",
+        "공지 맛집 오픈🍽️",
+        "모든 공지, 원샷 원킬⚡",
+        "공지=여기, 검색=끝",
+        "류찬, 박소영, 서성민이 만든 앱😎"
+    )
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentHomeMainBinding.inflate(inflater, container, false)
         return binding.root
     }
 
-    // ⬇️ onViewCreated 이하 모든 함수를 아래 코드로 교체 ⬇️
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // 랜덤 문구를 설정
+        binding.textviewRandomMessage.text = randomMessages.random()
 
         setupClickListeners()
         setupRecyclerViews()
@@ -181,11 +228,9 @@ class HomeMainFragment : Fragment() {
         val noticeDocId = "${notice.category}_${notice.id}"
         val newFavoriteState = !notice.isFavorite
 
-        // 1. UI를 즉시 업데이트
         val message = if (newFavoriteState) "즐겨찾기에 추가되었습니다." else "즐겨찾기에서 삭제되었습니다."
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 
-        // 인기글 목록에서 아이템 상태 변경
         val popularList = popularAdapter.currentList.toMutableList()
         val popularIndex = popularList.indexOfFirst { it.id == notice.id && it.category == notice.category }
         if (popularIndex != -1) {
@@ -194,10 +239,8 @@ class HomeMainFragment : Fragment() {
             popularAdapter.notifyItemChanged(popularIndex)
         }
 
-        // 즐겨찾기 미리보기 목록 업데이트
         fetchHomeFavorites()
 
-        // 2. Firestore 데이터베이스를 백그라운드에서 업데이트
         val updateTask = if (newFavoriteState) {
             userDocRef.update("favorites", FieldValue.arrayUnion(noticeDocId))
         } else {
@@ -205,7 +248,6 @@ class HomeMainFragment : Fragment() {
         }
         updateTask.addOnFailureListener {
             Toast.makeText(context, "즐겨찾기 상태 변경 실패", Toast.LENGTH_SHORT).show()
-            // 실패 시 UI 롤백 (선택 사항)
         }
     }
 

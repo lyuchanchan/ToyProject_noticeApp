@@ -13,57 +13,81 @@
         android:layout_height="40dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
+        android:contentDescription="App Icon"
         android:src="@drawable/hanshin_logo"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:contentDescription="App Icon" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/textview_app_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
         android:text="Hanshin Now!"
+        android:textColor="@color/black"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:textColor="@color/black"
-        app:layout_constraintStart_toEndOf="@id/imageview_app_icon"
-        app:layout_constraintEnd_toStartOf="@+id/imageview_search"
-        app:layout_constraintTop_toTopOf="@id/imageview_app_icon"
         app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
-        android:layout_marginStart="16dp" />
+        app:layout_constraintEnd_toStartOf="@+id/imageview_search"
+        app:layout_constraintStart_toEndOf="@id/imageview_app_icon"
+        app:layout_constraintTop_toTopOf="@id/imageview_app_icon" />
 
     <ImageView
         android:id="@+id/imageview_search"
         android:layout_width="28dp"
         android:layout_height="28dp"
-        android:src="@drawable/ic_search"
         android:layout_marginEnd="16dp"
+        android:contentDescription="Search Icon"
+        android:src="@drawable/ic_search"
+        app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
         app:layout_constraintEnd_toStartOf="@+id/imageview_settings"
         app:layout_constraintTop_toTopOf="@id/imageview_app_icon"
-        app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
-        android:contentDescription="Search Icon"
-        app:tint="?android:attr/textColorPrimary"/>
+        app:tint="?android:attr/textColorPrimary" />
 
     <ImageView
         android:id="@+id/imageview_settings"
         android:layout_width="28dp"
         android:layout_height="28dp"
         android:layout_marginEnd="16dp"
+        android:contentDescription="Settings Icon"
         android:src="@drawable/ic_settings"
+        app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/imageview_app_icon"
-        app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
-        android:contentDescription="Settings Icon"
-        app:tint="?android:attr/textColorPrimary"/>
+        app:tint="?android:attr/textColorPrimary" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_top_of_nested_scroll_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.4" />
+
+    <TextView
+        android:id="@+id/textview_random_message"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:gravity="center"
+        android:textColor="@color/text_primary"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/guideline_top_of_nested_scroll_view"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/imageview_app_icon"
+        app:layout_constraintVertical_bias="0.5"
+        tools:text="오늘도 놓치지 말고 체크✔️" />
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/nested_scroll_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/imageview_app_icon">
+        app:layout_constraintTop_toTopOf="@id/guideline_top_of_nested_scroll_view">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -76,11 +100,13 @@
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
+
                     <TextView
                         android:id="@+id/textview_home_shortcut_title"
                         android:layout_width="wrap_content"
@@ -89,6 +115,7 @@
                         android:textColor="@color/text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
+
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/recyclerview_home_shortcuts"
                         android:layout_width="match_parent"
@@ -108,15 +135,18 @@
                 android:layout_marginTop="16dp"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
+
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:id="@+id/layout_home_popular_header"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content">
+
                         <TextView
                             android:id="@+id/textview_home_popular_title"
                             android:layout_width="wrap_content"
@@ -127,6 +157,7 @@
                             android:textStyle="bold"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent" />
+
                         <TextView
                             android:id="@+id/textview_home_popular_more"
                             android:layout_width="wrap_content"
@@ -137,6 +168,7 @@
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintTop_toTopOf="parent" />
                     </androidx.constraintlayout.widget.ConstraintLayout>
+
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/recyclerview_home_popular"
                         android:layout_width="match_parent"
@@ -145,16 +177,19 @@
                         android:nestedScrollingEnabled="false"
                         tools:itemCount="1"
                         tools:listitem="@layout/item_notification_list" />
+
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:layout_marginTop="16dp"
                         android:background="?android:attr/listDivider" />
+
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:id="@+id/layout_home_favorite_header"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp">
+
                         <TextView
                             android:id="@+id/textview_home_favorite_title"
                             android:layout_width="wrap_content"
@@ -165,6 +200,7 @@
                             android:textStyle="bold"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent" />
+
                         <TextView
                             android:id="@+id/textview_home_favorite_more"
                             android:layout_width="wrap_content"
@@ -175,6 +211,7 @@
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintTop_toTopOf="parent" />
                     </androidx.constraintlayout.widget.ConstraintLayout>
+
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/recyclerview_home_favorite"
                         android:layout_width="match_parent"
@@ -183,17 +220,18 @@
                         android:nestedScrollingEnabled="false"
                         tools:itemCount="1"
                         tools:listitem="@layout/item_notification_list" />
+
                     <TextView
                         android:id="@+id/textview_home_favorite_empty"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="아직 등록된 즐겨찾기가 없어요!"
                         android:gravity="center"
                         android:padding="24dp"
+                        android:text="아직 등록된 즐겨찾기가 없어요!"
                         android:textColor="@color/text_secondary"
                         android:textSize="16sp"
                         android:visibility="gone"
-                        tools:visibility="visible"/>
+                        tools:visibility="visible" />
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
