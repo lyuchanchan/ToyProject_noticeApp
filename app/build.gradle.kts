@@ -63,4 +63,8 @@ dependencies {
 
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
     implementation("com.google.firebase:firebase-firestore-ktx")
+
+    // Firebase 인증 라이브러리 추가
+    implementation("com.google.firebase:firebase-auth-ktx")
+
 }

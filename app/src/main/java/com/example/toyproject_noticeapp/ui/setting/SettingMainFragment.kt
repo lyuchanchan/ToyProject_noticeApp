@@ -20,6 +20,9 @@ import com.example.toyproject_noticeapp.ui.login.LoginActivity
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.google.android.flexbox.JustifyContent
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 
 class SettingMainFragment : Fragment() {
 
@@ -28,6 +31,9 @@ class SettingMainFragment : Fragment() {
 
     private lateinit var includeKeywordAdapter: SettingKeywordAdapter
     private lateinit var excludeKeywordAdapter: SettingKeywordAdapter
+
+    private val auth = FirebaseAuth.getInstance()
+    private val db = Firebase.firestore
 
     // 임시 데이터
     private val subscriptionList = mutableListOf(
@@ -60,11 +66,40 @@ class SettingMainFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setupUserInfo()
         setupToolbar()
         setupSubscriptionRecyclerView()
         setupIncludeKeywordRecyclerView()
         setupExcludeKeywordRecyclerView()
         setupClickListeners()
+    }
+
+    private fun setupUserInfo() {
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            // Firestore에서 사용자 이름 가져오기
+            db.collection("users").document(currentUser.uid).get()
+                .addOnSuccessListener { document ->
+                    if (document != null) {
+                        val userName = document.getString("name")
+                        if (!userName.isNullOrEmpty()) {
+                            binding.textviewSettingName.text = "${userName}님"
+                        } else {
+                            binding.textviewSettingName.text = "이름 없음"
+                        }
+                    } else {
+                        binding.textviewSettingName.text = "이름 없음"
+                    }
+                }
+                .addOnFailureListener {
+                    binding.textviewSettingName.text = "이름을 불러올 수 없음"
+                }
+
+            binding.textviewSettingEmail.text = currentUser.email ?: "이메일 정보 없음"
+        } else {
+            startActivity(Intent(requireActivity(), LoginActivity::class.java))
+            requireActivity().finish()
+        }
     }
 
     private fun setupToolbar() {
@@ -115,17 +150,15 @@ class SettingMainFragment : Fragment() {
 
     private fun setupClickListeners() {
         binding.buttonSettingLogout.setOnClickListener {
-            // SharedPreferences에서 사용자 정보 삭제
             val sharedPreferences = requireActivity().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
             sharedPreferences.edit().clear().apply()
 
-            // ##### 이 부분이 수정되었습니다! #####
-            // activity 대신 requireActivity()를 사용합니다.
+            FirebaseAuth.getInstance().signOut()
+
             val intent = Intent(requireActivity(), LoginActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
 
-            // MainActivity 종료
             requireActivity().finish()
         }
 
