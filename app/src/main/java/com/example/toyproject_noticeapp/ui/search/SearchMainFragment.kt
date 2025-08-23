@@ -1,25 +1,31 @@
 package com.example.toyproject_noticeapp.ui.search
 
+import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.toyproject_noticeapp.R
-import com.example.toyproject_noticeapp.adapter.SearchResultAdapter
+import com.example.toyproject_noticeapp.adapter.AdapterNotificationList
 import com.example.toyproject_noticeapp.data.DataNotificationItem
 import com.example.toyproject_noticeapp.databinding.FragmentSearchMainBinding
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 
 class SearchMainFragment : Fragment() {
 
     private var _binding: FragmentSearchMainBinding? = null
     private val binding get() = _binding!!
 
-    private val searchAdapter = SearchResultAdapter()
-    private val allNotifications = mutableListOf<DataNotificationItem>() // 전체 공지 원본
+    private lateinit var searchAdapter: AdapterNotificationList
+    private val allNotifications = mutableListOf<DataNotificationItem>()
+    private val db = Firebase.firestore
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentSearchMainBinding.inflate(inflater, container, false)
@@ -29,22 +35,24 @@ class SearchMainFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        loadDummyData() // 임시로 전체 데이터 로드
         setupToolbar()
         setupRecyclerView()
         setupSearchEditText()
+        fetchAllNotices()
     }
 
-    // ##### 이 부분이 수정되었습니다! #####
-    // 실제 앱에서는 모든 공지사항 목록을 불러와야 함
-    private fun loadDummyData() {
-        allNotifications.addAll(listOf(
-            // 각 항목의 끝에 url 값을 추가합니다.
-            DataNotificationItem(1, "학사공지", "2025-08-20", "2학기 수강신청 최종 정정 안내", "수강신청 최종 정정 기간은...", false, "https://www.hs.ac.kr/kor/4953/subview.do?enc=Zm5jdDF8QEB8JTJGYmJzJTJGa29yJTJGMjQlMkYxNTA2NTUlMkZhcnRjbFZpZXcuZG8lM0ZwYWdlJTNEMSUyNnNyY2hDb2x1bW4lM0QlMjZzcmNoV3JkJTNEJTI2YmJzQ2xTZXElM0QlMjZiYnNPcGVuV3JkU2VxJTNEJTI2cmdzQmduZGVTdHIlM0QlMjZyZ3NFbmRkZVN0ciUzRCUyNmlzVmlld01pbmUlM0RmYWxzZSUyNnBhc3N3b3JkJTNEJTI2"),
-            DataNotificationItem(2, "장학공지", "2025-08-19", "국가장학금 2차 신청 안내", "2차 신청 기간은...", true, ""),
-            DataNotificationItem(3, "공지사항", "2025-08-18", "도서관 운영시간 변경 안내", "시험 기간 도서관 운영시간이...", false, "")
-        ))
+    private fun fetchAllNotices() {
+        db.collection("notices").get()
+            .addOnSuccessListener { documents ->
+                allNotifications.clear()
+                val noticeList = documents.toObjects(DataNotificationItem::class.java)
+                allNotifications.addAll(noticeList)
+            }
+            .addOnFailureListener {
+                Toast.makeText(context, "공지 목록을 불러오지 못했습니다.", Toast.LENGTH_SHORT).show()
+            }
     }
+
 
     private fun setupToolbar() {
         binding.toolbarSearchMain.toolbar.title = "게시글 검색"
@@ -55,6 +63,12 @@ class SearchMainFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
+        searchAdapter = AdapterNotificationList(
+            onItemClick = { notice -> openInAppBrowser(notice.url) },
+            onFavoriteClick = {
+                Toast.makeText(context, "이 화면에서는 즐겨찾기를 변경할 수 없습니다.", Toast.LENGTH_SHORT).show()
+            }
+        )
         binding.recyclerviewSearchResults.adapter = searchAdapter
     }
 
@@ -70,15 +84,28 @@ class SearchMainFragment : Fragment() {
 
     private fun filter(query: String) {
         val filteredList = if (query.isEmpty()) {
-            emptyList() // 검색어가 없으면 빈 목록
+            emptyList()
         } else {
             allNotifications.filter {
                 it.title.contains(query, ignoreCase = true) || it.description.contains(query, ignoreCase = true)
             }
         }
-        searchAdapter.updateQuery(query) // 하이라이트를 위해 어댑터에 현재 검색어 전달
         searchAdapter.submitList(filteredList)
     }
+
+    private fun openInAppBrowser(url: String) {
+        if (url.isNotEmpty()) {
+            try {
+                val customTabsIntent = CustomTabsIntent.Builder().build()
+                customTabsIntent.launchUrl(requireContext(), Uri.parse(url))
+            } catch (e: Exception) {
+                Toast.makeText(context, "페이지를 열 수 없습니다.", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, "연결된 링크가 없습니다.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()

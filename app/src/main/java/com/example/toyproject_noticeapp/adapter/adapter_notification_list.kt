@@ -36,8 +36,12 @@ class AdapterNotificationList(
             binding.textviewNotificationDescription.text = item.description
             binding.textviewNotificationViewCount.text = item.viewCount.toString()
 
-            val starIconRes = if (item.isFavorite) R.drawable.ic_star_filled else R.drawable.ic_star_outline
-            binding.imageNotificationFavorite.setImageResource(starIconRes)
+            // ⬇️ isFavorite 상태에 따라 아이콘 리소스를 직접 변경 ⬇️
+            if (item.isFavorite) {
+                binding.imageNotificationFavorite.setImageResource(R.drawable.ic_star_filled)
+            } else {
+                binding.imageNotificationFavorite.setImageResource(R.drawable.ic_star_outline)
+            }
 
             itemView.setOnClickListener { onItemClick(item) }
             binding.imageNotificationFavorite.setOnClickListener { onFavoriteClick(item) }
@@ -46,7 +50,7 @@ class AdapterNotificationList(
 
     private class NotificationDiffCallback : DiffUtil.ItemCallback<DataNotificationItem>() {
         override fun areItemsTheSame(oldItem: DataNotificationItem, newItem: DataNotificationItem): Boolean {
-            return oldItem.id == newItem.id
+            return "${oldItem.category}_${oldItem.id}" == "${newItem.category}_${newItem.id}"
         }
 
         override fun areContentsTheSame(oldItem: DataNotificationItem, newItem: DataNotificationItem): Boolean {

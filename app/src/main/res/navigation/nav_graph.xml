@@ -52,4 +52,6 @@
         android:label="FavoriteListFragment"
         tools:layout="@layout/fragment_favorite_list"/>
 
+
+
 </navigation>

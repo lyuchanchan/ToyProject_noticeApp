@@ -14,6 +14,7 @@ import com.example.toyproject_noticeapp.R
 import com.example.toyproject_noticeapp.adapter.AdapterNotificationList
 import com.example.toyproject_noticeapp.data.DataNotificationItem
 import com.example.toyproject_noticeapp.databinding.FragmentFavoriteListBinding
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -25,10 +26,10 @@ class FavoriteListFragment : Fragment() {
 
     private lateinit var favoriteAdapter: AdapterNotificationList
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+    private val auth = FirebaseAuth.getInstance()
+    private val db = Firebase.firestore
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentFavoriteListBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -37,7 +38,7 @@ class FavoriteListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupToolbar()
         setupRecyclerView()
-        fetchFavoriteNotices()
+        fetchFavorites()
     }
 
     private fun setupToolbar() {
@@ -52,38 +53,37 @@ class FavoriteListFragment : Fragment() {
         favoriteAdapter = AdapterNotificationList(
             onItemClick = { notice -> openInAppBrowser(notice.url) },
             onFavoriteClick = { notice ->
-                removeFavorite(notice)
+                updateFavoriteStatus(notice)
             }
         )
         binding.recyclerviewFavoriteList.adapter = favoriteAdapter
         binding.recyclerviewFavoriteList.layoutManager = LinearLayoutManager(context)
     }
 
-    // ##### 이 함수가 수정되었습니다! #####
-    private fun fetchFavoriteNotices() {
-        val db = Firebase.firestore
-        val userId = "test" // TODO: 실제 로그인된 사용자 ID로 교체해야 함
-        val userDocRef = db.collection("users").document(userId)
-
-        userDocRef.get()
+    private fun fetchFavorites() {
+        val userId = auth.currentUser?.uid ?: return
+        db.collection("users").document(userId).get()
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
                     val favoriteIds = document.get("favorites") as? List<String>
-
-                    // 비어있는 문자열을 제거하여 유효한 ID 목록만 필터링합니다.
-                    val validFavoriteIds = favoriteIds?.filter { it.isNotBlank() }
-
-                    if (validFavoriteIds != null && validFavoriteIds.isNotEmpty()) {
-                        db.collection("notices").whereIn(com.google.firebase.firestore.FieldPath.documentId(), validFavoriteIds).get()
+                    if (!favoriteIds.isNullOrEmpty()) {
+                        db.collection("notices").whereIn(com.google.firebase.firestore.FieldPath.documentId(), favoriteIds).get()
                             .addOnSuccessListener { noticeDocuments ->
-                                val favoriteList = mutableListOf<DataNotificationItem>()
-                                for (noticeDoc in noticeDocuments) {
-                                    val notice = noticeDoc.toObject(DataNotificationItem::class.java)
+                                val favoriteList = noticeDocuments.mapNotNull { doc ->
+                                    val notice = DataNotificationItem(
+                                        id = (doc.getLong("id") ?: 0L).toInt(),
+                                        category = doc.getString("category") ?: "",
+                                        date = doc.getString("date") ?: "",
+                                        title = doc.getString("title") ?: "",
+                                        description = doc.getString("description") ?: "",
+                                        url = doc.getString("url") ?: "",
+                                        viewCount = (doc.getLong("viewCount") ?: 0L).toInt()
+                                    )
                                     notice.isFavorite = true
-                                    favoriteList.add(notice)
+                                    notice
                                 }
                                 val sortedList = favoriteList.sortedByDescending { notice ->
-                                    validFavoriteIds.indexOf("${notice.category}_${notice.id}")
+                                    favoriteIds.indexOf("${notice.category}_${notice.id}")
                                 }
                                 favoriteAdapter.submitList(sortedList)
                             }
@@ -92,35 +92,30 @@ class FavoriteListFragment : Fragment() {
                     }
                 }
             }
-            .addOnFailureListener {
-                Toast.makeText(context, "즐겨찾기 목록을 불러오는 데 실패했습니다.", Toast.LENGTH_SHORT).show()
-            }
     }
 
-    private fun removeFavorite(notice: DataNotificationItem) {
-        val db = Firebase.firestore
-        val userId = "test" // TODO: 실제 로그인된 사용자 ID로 교체
+    private fun updateFavoriteStatus(notice: DataNotificationItem) {
+        val userId = auth.currentUser?.uid ?: return
         val userDocRef = db.collection("users").document(userId)
         val noticeDocId = "${notice.category}_${notice.id}"
 
         userDocRef.update("favorites", FieldValue.arrayRemove(noticeDocId))
             .addOnSuccessListener {
-                Toast.makeText(context, "즐겨찾기에서 삭제했습니다.", Toast.LENGTH_SHORT).show()
-                fetchFavoriteNotices()
+                val currentList = favoriteAdapter.currentList.toMutableList()
+                currentList.removeAll { it.id == notice.id && it.category == notice.category }
+                favoriteAdapter.submitList(currentList)
             }
             .addOnFailureListener {
-                Toast.makeText(context, "삭제에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "즐겨찾기 해제 실패", Toast.LENGTH_SHORT).show()
             }
     }
 
     private fun openInAppBrowser(url: String) {
-        if (url.isNotEmpty()) {
-            try {
-                val customTabsIntent = CustomTabsIntent.Builder().build()
-                customTabsIntent.launchUrl(requireContext(), Uri.parse(url))
-            } catch (e: Exception) {
-                // ...
-            }
+        try {
+            val customTabsIntent = CustomTabsIntent.Builder().build()
+            customTabsIntent.launchUrl(requireContext(), Uri.parse(url))
+        } catch (e: Exception) {
+            Toast.makeText(context, "페이지를 열 수 없습니다.", Toast.LENGTH_SHORT).show()
         }
     }
 
