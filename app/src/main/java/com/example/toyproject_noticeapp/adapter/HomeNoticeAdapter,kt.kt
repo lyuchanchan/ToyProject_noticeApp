@@ -32,9 +32,6 @@ class HomeNoticeAdapter(private val items: List<Notice>) :
             binding.textviewItemCategory.text = notice.category
             binding.textviewItemTitle.text = notice.title
             binding.textviewItemDate.text = notice.date
-
-            // isNew 값에 따라 NEW 태그 보이기/숨기기
-            binding.textviewItemNew.visibility = if (notice.isNew) View.VISIBLE else View.GONE
         }
     }
 }

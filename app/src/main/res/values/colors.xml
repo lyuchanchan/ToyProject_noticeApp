@@ -14,9 +14,10 @@
     <color name="input_stroke_color">#D1D5DB</color>
     <color name="yellow">#FFC107</color>
     <color name="dark_purple">#A020F0</color>
-
     <color name="light_purple">#E0BBE4</color>
     <color name="stylish_purple_transparent">#50524075</color>
-    <color name="stylish_purple">#F0F4C3F2</color>
     <color name="blue_tinted_purple">#55524075</color>
+
+    <color name="stylish_purple">#C5CAE9</color>
+
 </resources>

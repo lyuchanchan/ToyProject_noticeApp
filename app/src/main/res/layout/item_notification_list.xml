@@ -65,28 +65,14 @@
         android:id="@+id/textview_notification_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="10dp"
         android:ellipsize="end"
-        android:maxLines="1"
+        android:maxLines="2"
         android:textColor="@color/black"
-        android:textSize="16sp"
+        android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/image_notification_favorite"
         tools:text="2025학년도 2학기 수강신청 최종 정정 안내" />
-
-    <TextView
-        android:id="@+id/textview_notification_description"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:ellipsize="end"
-        android:maxLines="2"
-        android:textColor="@android:color/darker_gray"
-        android:textSize="14sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textview_notification_title"
-        tools:text="수강신청 최종 정정 기간은 2025년 9월 1일(월)부터 9월 5일(금)까지입니다. 기간 내에..." />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

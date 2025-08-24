@@ -33,7 +33,6 @@ class AdapterNotificationList(
             binding.textviewNotificationCategory.text = item.category
             binding.textviewNotificationDate.text = item.date
             binding.textviewNotificationTitle.text = item.title
-            binding.textviewNotificationDescription.text = item.description
             binding.textviewNotificationViewCount.text = item.viewCount.toString()
 
             // ⬇️ isFavorite 상태에 따라 아이콘 리소스를 직접 변경 ⬇️

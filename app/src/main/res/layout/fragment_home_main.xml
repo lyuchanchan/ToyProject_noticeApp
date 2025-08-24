@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8F9FA"
+    android:background="@android:color/white"
     tools:context=".ui.home.HomeMainFragment">
 
     <ImageView
@@ -61,7 +61,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.4" />
+        app:layout_constraintGuide_percent="0.3" />
 
     <TextView
         android:id="@+id/textview_random_message"
@@ -98,6 +98,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/stylish_purple"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp">
 
@@ -111,7 +112,7 @@
                         android:id="@+id/textview_home_shortcut_title"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="바로가기"
+                        android:text="골라보기"
                         android:textColor="@color/text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -133,6 +134,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
+                app:cardBackgroundColor="@color/stylish_purple"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp">
 

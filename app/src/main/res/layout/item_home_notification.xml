@@ -30,24 +30,6 @@
             tools:text="학사공지" />
 
         <TextView
-            android:id="@+id/textview_item_new"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/shape_common_new_tag"
-            android:text="NEW"
-            android:textColor="@android:color/white"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            android:layout_marginStart="8dp"
-            app:layout_constraintStart_toEndOf="@id/textview_item_category"
-            app:layout_constraintTop_toTopOf="@id/textview_item_category"
-            app:layout_constraintBottom_toBottomOf="@id/textview_item_category"/>
-
-        <TextView
             android:id="@+id/textview_item_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
