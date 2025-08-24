@@ -69,4 +69,7 @@ dependencies {
     // Firebase 인증 라이브러리 추가
     implementation("com.google.firebase:firebase-auth-ktx")
 
+    implementation("com.google.firebase:firebase-messaging-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
+
 }
