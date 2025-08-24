@@ -16,6 +16,10 @@ import com.example.toyproject_noticeapp.R
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import java.util.concurrent.atomic.AtomicInteger
+import com.google.firebase.auth.ktx.auth // ❗️ 추가
+import com.google.firebase.firestore.ktx.firestore // ❗️ 추가
+import com.google.firebase.ktx.Firebase // ❗️ 추가
+
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
@@ -78,6 +82,17 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         notificationManager.notify(NotificationID.incrementAndGet(), notificationBuilder.build())
         notificationManager.notify(SUMMARY_ID, summaryNotification)
+    }
+
+    // ❗️ 새 토큰을 Firestore에 저장하는 함수 추가
+    private fun sendRegistrationToServer(token: String?) {
+        val uid = Firebase.auth.currentUser?.uid
+        if (uid != null && token != null) {
+            val userDocRef = Firebase.firestore.collection("users").document(uid)
+            userDocRef.update("fcmToken", token)
+                .addOnSuccessListener { Log.d(TAG, "FCM token updated successfully.") }
+                .addOnFailureListener { e -> Log.w(TAG, "Error updating FCM token", e) }
+        }
     }
 
     companion object {

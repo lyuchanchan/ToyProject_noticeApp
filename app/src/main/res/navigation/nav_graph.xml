@@ -22,6 +22,9 @@
         <action
             android:id="@+id/action_home_to_favorites"
             app:destination="@id/favoriteListFragment" />
+        <action
+            android:id="@+id/action_home_to_notification_history"
+            app:destination="@id/notificationHistoryFragment" />
     </fragment>
 
     <fragment
@@ -52,6 +55,11 @@
         android:label="FavoriteListFragment"
         tools:layout="@layout/fragment_favorite_list"/>
 
+    <fragment
+        android:id="@+id/notificationHistoryFragment"
+        android:name="com.example.toyproject_noticeapp.ui.notification.NotificationHistoryFragment"
+        android:label="fragment_notification_history"
+        tools:layout="@layout/fragment_notification_history" />
 
 
 </navigation>

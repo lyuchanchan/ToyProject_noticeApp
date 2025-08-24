@@ -1,8 +1,10 @@
+// app/src/main/java/com/example/toyproject_noticeapp/ui/setting/SettingMainFragment.kt
 package com.example.toyproject_noticeapp.ui.setting
 
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,6 +23,7 @@ import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.google.android.flexbox.JustifyContent
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
@@ -31,29 +34,19 @@ class SettingMainFragment : Fragment() {
 
     private lateinit var includeKeywordAdapter: SettingKeywordAdapter
     private lateinit var excludeKeywordAdapter: SettingKeywordAdapter
+    private lateinit var subscriptionAdapter: SettingSubscriptionAdapter
 
     private val auth = FirebaseAuth.getInstance()
     private val db = Firebase.firestore
+    private val userDocRef by lazy { db.collection("users").document(auth.currentUser!!.uid) }
 
-    // 임시 데이터
-    private val subscriptionList = mutableListOf(
-        Subscription("공지사항", true),
-        Subscription("학사공지", true),
-        Subscription("행사공지", false),
-        Subscription("장학공지", true),
-        Subscription("취업공지", false),
-        Subscription("AISW계열 공지사항", true),
-        Subscription("SW중심대학 공지사항", true)
+    private val allSubscriptionNames = listOf(
+        "공지사항", "학사공지", "행사공지", "장학공지", "취업공지", "AISW계열 공지사항"
     )
-    private val includeKeywordList = mutableListOf(
-        Keyword("장학금"),
-        Keyword("기숙사"),
-        Keyword("수강신청")
-    )
-    private val excludeKeywordList = mutableListOf(
-        Keyword("연장"),
-        Keyword("마감")
-    )
+    private val subscriptionList = mutableListOf<Subscription>()
+    private val includeKeywordList = mutableListOf<Keyword>()
+    private val excludeKeywordList = mutableListOf<Keyword>()
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -66,134 +59,143 @@ class SettingMainFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupUserInfo()
         setupToolbar()
-        setupSubscriptionRecyclerView()
-        setupIncludeKeywordRecyclerView()
-        setupExcludeKeywordRecyclerView()
+        setupRecyclerViews()
         setupClickListeners()
+        loadUserSettings()
     }
 
-    private fun setupUserInfo() {
+    private fun loadUserSettings() {
         val currentUser = auth.currentUser
-        if (currentUser != null) {
-            // Firestore에서 사용자 이름 가져오기
-            db.collection("users").document(currentUser.uid).get()
-                .addOnSuccessListener { document ->
-                    if (document != null) {
-                        val userName = document.getString("name")
-                        if (!userName.isNullOrEmpty()) {
-                            binding.textviewSettingName.text = "${userName}님"
-                        } else {
-                            binding.textviewSettingName.text = "이름 없음"
-                        }
-                    } else {
-                        binding.textviewSettingName.text = "이름 없음"
-                    }
-                }
-                .addOnFailureListener {
-                    binding.textviewSettingName.text = "이름을 불러올 수 없음"
-                }
+        if (currentUser == null) {
+            goToLogin()
+            return
+        }
 
-            binding.textviewSettingEmail.text = currentUser.email ?: "이메일 정보 없음"
-        } else {
-            startActivity(Intent(requireActivity(), LoginActivity::class.java))
-            requireActivity().finish()
+        binding.textviewSettingEmail.text = currentUser.email ?: "이메일 정보 없음"
+
+        userDocRef.get().addOnSuccessListener { document ->
+            if (document != null && document.exists()) {
+                val userName = document.getString("name")
+                binding.textviewSettingName.text = if (!userName.isNullOrEmpty()) "${userName}님" else "이름 없음"
+
+                // 구독 설정 불러오기
+                val subscribed = document.get("subscriptions") as? List<String> ?: allSubscriptionNames
+                subscriptionList.clear()
+                subscriptionList.addAll(allSubscriptionNames.map { Subscription(it, subscribed.contains(it)) })
+                subscriptionAdapter.submitList(subscriptionList.toList())
+
+                // 포함 키워드 불러오기
+                val includeKeywords = document.get("includeKeywords") as? List<String> ?: emptyList()
+                includeKeywordList.clear()
+                includeKeywordList.addAll(includeKeywords.map { Keyword(it) })
+                includeKeywordAdapter.submitList(includeKeywordList.toList())
+
+                // 제외 키워드 불러오기
+                val excludeKeywords = document.get("excludeKeywords") as? List<String> ?: emptyList()
+                excludeKeywordList.clear()
+                excludeKeywordList.addAll(excludeKeywords.map { Keyword(it) })
+                excludeKeywordAdapter.submitList(excludeKeywordList.toList())
+            } else {
+                // 문서가 없으면 기본값으로 초기화
+                val defaultSubscriptions = allSubscriptionNames
+                val initialSettings = hashMapOf(
+                    "name" to (currentUser.displayName ?: ""),
+                    "email" to currentUser.email,
+                    "subscriptions" to defaultSubscriptions,
+                    "includeKeywords" to emptyList<String>(),
+                    "excludeKeywords" to emptyList<String>()
+                )
+                userDocRef.set(initialSettings).addOnSuccessListener {
+                    loadUserSettings() // 재귀 호출로 UI 업데이트
+                }
+            }
+        }.addOnFailureListener {
+            Toast.makeText(context, "설정 정보를 불러오는데 실패했습니다.", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun setupToolbar() {
         binding.toolbarSettingMain.toolbar.title = "설정"
         binding.toolbarSettingMain.toolbar.setNavigationIcon(R.drawable.ic_arrow_back)
-        binding.toolbarSettingMain.toolbar.setNavigationOnClickListener {
-            findNavController().navigateUp()
-        }
+        binding.toolbarSettingMain.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
     }
 
-    private fun setupSubscriptionRecyclerView() {
-        val subscriptionAdapter = SettingSubscriptionAdapter { subscription, isChecked ->
-            Toast.makeText(
-                requireContext(),
-                "${subscription.name} 알림 ${if (isChecked) "ON" else "OFF"}",
-                Toast.LENGTH_SHORT
-            ).show()
+    private fun setupRecyclerViews() {
+        // 구독 리사이클러뷰
+        subscriptionAdapter = SettingSubscriptionAdapter { subscription, isChecked ->
+            // ❗️ 타입을 Map<String, Any>로 명시적으로 지정
+            val updateData: Map<String, Any> = hashMapOf(
+                "subscriptions" to if (isChecked) {
+                    FieldValue.arrayUnion(subscription.name)
+                } else {
+                    FieldValue.arrayRemove(subscription.name)
+                }
+            )
+            userDocRef.update(updateData)
         }
         binding.recyclerviewSettingSubscriptions.adapter = subscriptionAdapter
-        subscriptionAdapter.submitList(subscriptionList)
-    }
 
-    private fun setupIncludeKeywordRecyclerView() {
+        // 포함 키워드 리사이클러뷰
         includeKeywordAdapter = SettingKeywordAdapter { keyword ->
+            userDocRef.update("includeKeywords", FieldValue.arrayRemove(keyword.text))
             includeKeywordList.remove(keyword)
             includeKeywordAdapter.submitList(includeKeywordList.toList())
-            Toast.makeText(requireContext(), "${keyword.text} 삭제됨", Toast.LENGTH_SHORT).show()
         }
-        val layoutManager = FlexboxLayoutManager(context).apply {
+        binding.recyclerviewSettingIncludeKeywords.layoutManager = FlexboxLayoutManager(context).apply {
             flexDirection = FlexDirection.ROW
             justifyContent = JustifyContent.FLEX_START
         }
-        binding.recyclerviewSettingIncludeKeywords.layoutManager = layoutManager
         binding.recyclerviewSettingIncludeKeywords.adapter = includeKeywordAdapter
-        includeKeywordAdapter.submitList(includeKeywordList.toList())
-    }
 
-    private fun setupExcludeKeywordRecyclerView() {
+        // 제외 키워드 리사이클러뷰
         excludeKeywordAdapter = SettingKeywordAdapter { keyword ->
+            userDocRef.update("excludeKeywords", FieldValue.arrayRemove(keyword.text))
             excludeKeywordList.remove(keyword)
             excludeKeywordAdapter.submitList(excludeKeywordList.toList())
-            Toast.makeText(
-                requireContext(),
-                "제외 키워드 '${keyword.text}'가 삭제되었습니다.",
-                Toast.LENGTH_SHORT
-            ).show()
         }
-        val layoutManager = FlexboxLayoutManager(context).apply {
+        binding.recyclerviewSettingExcludeKeywords.layoutManager = FlexboxLayoutManager(context).apply {
             flexDirection = FlexDirection.ROW
             justifyContent = JustifyContent.FLEX_START
         }
-        binding.recyclerviewSettingExcludeKeywords.layoutManager = layoutManager
         binding.recyclerviewSettingExcludeKeywords.adapter = excludeKeywordAdapter
-        excludeKeywordAdapter.submitList(excludeKeywordList.toList())
     }
 
     private fun setupClickListeners() {
         binding.buttonSettingLogout.setOnClickListener {
-            val sharedPreferences =
-                requireActivity().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-            sharedPreferences.edit().clear().apply()
-
-            FirebaseAuth.getInstance().signOut()
-
-            val intent = Intent(requireActivity(), LoginActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-
-            requireActivity().finish()
+            auth.signOut()
+            goToLogin()
         }
 
         binding.buttonAddIncludeKeyword.setOnClickListener {
             val keywordText = binding.edittextIncludeKeyword.text.toString().trim()
             if (keywordText.isNotEmpty()) {
+                userDocRef.update("includeKeywords", FieldValue.arrayUnion(keywordText))
                 includeKeywordList.add(Keyword(keywordText))
                 includeKeywordAdapter.submitList(includeKeywordList.toList())
                 binding.edittextIncludeKeyword.text.clear()
                 hideKeyboard()
-            } else {
-                Toast.makeText(requireContext(), "키워드를 입력해주세요.", Toast.LENGTH_SHORT).show()
             }
         }
 
         binding.buttonAddExcludeKeyword.setOnClickListener {
             val keywordText = binding.edittextExcludeKeyword.text.toString().trim()
             if (keywordText.isNotEmpty()) {
+                userDocRef.update("excludeKeywords", FieldValue.arrayRemove(keywordText))
                 excludeKeywordList.add(Keyword(keywordText))
                 excludeKeywordAdapter.submitList(excludeKeywordList.toList())
                 binding.edittextExcludeKeyword.text.clear()
                 hideKeyboard()
-            } else {
-                Toast.makeText(requireContext(), "제외할 키워드를 입력해주세요.", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun goToLogin() {
+        val intent = Intent(requireActivity(), LoginActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        startActivity(intent)
+        requireActivity().finish()
     }
 
     private fun hideKeyboard() {

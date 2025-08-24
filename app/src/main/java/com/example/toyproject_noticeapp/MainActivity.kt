@@ -12,6 +12,9 @@ import androidx.core.content.ContextCompat
 import com.example.toyproject_noticeapp.databinding.ActivityMainBinding
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.ktx.messaging
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ktx.firestore
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -67,15 +70,21 @@ class MainActivity : AppCompatActivity() {
                 Log.d(TAG, msg)
             }
 
-        // 2. 현재 FCM 토큰 가져와서 로그에 출력 (테스트용)
+        // ❗️ 현재 FCM 토큰을 가져와 Firestore에 저장
         Firebase.messaging.token.addOnCompleteListener { task ->
             if (!task.isSuccessful) {
                 Log.w(TAG, "Fetching FCM registration token failed", task.exception)
                 return@addOnCompleteListener
             }
-            // Get new FCM registration token
             val token = task.result
             Log.d(TAG, "Current FCM Token: $token")
+
+            // Firestore에 토큰 저장
+            val uid = Firebase.auth.currentUser?.uid
+            if (uid != null) {
+                Firebase.firestore.collection("users").document(uid)
+                    .update("fcmToken", token)
+            }
         }
     }
 }

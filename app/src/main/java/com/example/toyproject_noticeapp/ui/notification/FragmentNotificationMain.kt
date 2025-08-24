@@ -2,11 +2,9 @@ package com.example.toyproject_noticeapp.ui.notification
 
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -14,9 +12,6 @@ import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.toyproject_noticeapp.R
 import com.example.toyproject_noticeapp.adapter.AdapterNotificationList
-import com.example.toyproject_noticeapp.adapter.FilterAdapter
-import com.example.toyproject_noticeapp.adapter.FilterItem
-import com.example.toyproject_noticeapp.adapter.FilterType
 import com.example.toyproject_noticeapp.data.DataNotificationItem
 import com.example.toyproject_noticeapp.databinding.FragmentNotificationMainBinding
 import com.google.firebase.auth.FirebaseAuth
@@ -26,53 +21,63 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
 class FragmentNotificationMain : Fragment() {
-    // ... (변수 선언 및 onCreateView는 동일)
+
     private var _binding: FragmentNotificationMainBinding? = null
     private val binding get() = _binding!!
     private val args: FragmentNotificationMainArgs by navArgs()
 
     private lateinit var notificationAdapter: AdapterNotificationList
     private var allNotifications = mutableListOf<DataNotificationItem>()
-    private val filterList = mutableListOf<FilterItem>()
     private val auth = FirebaseAuth.getInstance()
     private val db = Firebase.firestore
 
+    private enum class SortOrder {
+        VIEWS, LATEST, OLDEST
+    }
+    private var currentSortOrder = SortOrder.VIEWS
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentNotificationMainBinding.inflate(inflater, container, false)
+        setHasOptionsMenu(true)
         return binding.root
     }
 
-    // ⬇️ onViewCreated 이하 모든 함수를 아래 코드로 교체 ⬇️
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        if (filterList.isEmpty()){
-            loadFilterData()
-        }
         setupToolbar()
-        setupFilterRecyclerView()
         setupNotificationRecyclerView()
         fetchNoticesFromFirebase()
     }
 
-    private fun loadFilterData() {
-        filterList.clear()
-        val initialFilters = listOf(
-            FilterItem("전체선택", FilterType.COMMAND),
-            FilterItem("전체해제", FilterType.COMMAND),
-            FilterItem("공지사항", FilterType.CATEGORY, isSelected = true),
-            FilterItem("학사공지", FilterType.CATEGORY, isSelected = true),
-            FilterItem("행사공지", FilterType.CATEGORY, isSelected = true),
-            FilterItem("장학공지", FilterType.CATEGORY, isSelected = true),
-            FilterItem("취업공지", FilterType.CATEGORY, isSelected = true),
-            FilterItem("AISW계열", FilterType.CATEGORY, isSelected = true)
-        )
-
-        if (args.categoryName != "인기글" && args.categoryName != "전체") {
-            initialFilters.filter { it.type == FilterType.CATEGORY }.forEach {
-                it.isSelected = it.name == args.categoryName
-            }
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        if (args.categoryName == "인기글") {
+            inflater.inflate(R.menu.menu_sort, menu)
         }
-        filterList.addAll(initialFilters)
+        super.onCreateOptionsMenu(menu, inflater)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        // ❗️ 1. 뒤로가기 버튼 문제 해결
+        // SupportActionBar로 설정된 툴바의 뒤로가기(home) 버튼 클릭을 처리합니다.
+        if (item.itemId == android.R.id.home) {
+            findNavController().navigateUp()
+            return true
+        }
+
+        val newSortOrder = when (item.itemId) {
+            R.id.sort_by_views -> SortOrder.VIEWS
+            R.id.sort_by_latest -> SortOrder.LATEST
+            R.id.sort_by_oldest -> SortOrder.OLDEST
+            else -> null
+        }
+
+        if (newSortOrder != null) {
+            currentSortOrder = newSortOrder
+            sortAndDisplayList()
+            return true
+        }
+
+        return super.onOptionsItemSelected(item)
     }
 
     private fun fetchNoticesFromFirebase() {
@@ -80,63 +85,41 @@ class FragmentNotificationMain : Fragment() {
         val collectionPath = if (categoryToShow == "인기글") "popular_notices" else "notices"
         var query: Query = db.collection(collectionPath)
 
-        if (categoryToShow != "인기글" && categoryToShow != "전체") {
-            query = query.whereEqualTo("category", categoryToShow)
+        if (categoryToShow != "인기글") {
+            // 인기글이 아닐 때만 쿼리 조건 적용
+            if (categoryToShow != "전체") {
+                query = query.whereEqualTo("category", categoryToShow)
+            }
+            query = query.orderBy("id", Query.Direction.DESCENDING)
         }
-        query = query.orderBy("id", Query.Direction.DESCENDING)
 
         query.get()
             .addOnSuccessListener { result ->
-                allNotifications = result.mapNotNull { doc ->
-                    DataNotificationItem(
-                        id = (doc.getLong("id") ?: 0L).toInt(),
-                        category = doc.getString("category") ?: "",
-                        date = doc.getString("date") ?: "",
-                        title = doc.getString("title") ?: "",
-                        description = doc.getString("description") ?: "",
-                        url = doc.getString("url") ?: "",
-                        viewCount = (doc.getLong("viewCount") ?: 0L).toInt()
-                    )
-                }.toMutableList()
-
-                updateFavoritesStateAndApplyFilters()
+                allNotifications = result.toObjects(DataNotificationItem::class.java).toMutableList()
+                updateFavoritesStateAndApplySort()
             }
-            .addOnFailureListener { exception ->
+            .addOnFailureListener {
                 Toast.makeText(context, "데이터를 불러오는 데 실패했습니다.", Toast.LENGTH_LONG).show()
             }
     }
 
     private fun setupToolbar() {
-        binding.toolbarNotificationMain.toolbar.title = if (args.categoryName == "인기글") "이 달의 인기글" else args.categoryName
-        binding.toolbarNotificationMain.toolbar.setNavigationIcon(R.drawable.ic_arrow_back)
-        binding.toolbarNotificationMain.toolbar.setNavigationOnClickListener {
-            findNavController().navigateUp()
-        }
-    }
+        val toolbarTitle = if (args.categoryName == "인기글") "이 달의 인기글" else args.categoryName
+        binding.toolbarNotificationMain.toolbar.title = toolbarTitle
 
-    private fun setupFilterRecyclerView() {
-        val categoryToShow = args.categoryName
-        if (categoryToShow != "전체" && categoryToShow != "인기글") {
-            binding.recyclerviewNotificationFilters.visibility = View.GONE
+        // '인기글' 페이지일 때만 SupportActionBar로 설정하여 메뉴를 표시
+        if (args.categoryName == "인기글" && activity is AppCompatActivity) {
+            (activity as AppCompatActivity).setSupportActionBar(binding.toolbarNotificationMain.toolbar)
+            // ❗️ SupportActionBar를 설정한 후 뒤로가기 아이콘을 표시
+            (activity as AppCompatActivity).supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            (activity as AppCompatActivity).supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_arrow_back)
         } else {
-            binding.recyclerviewNotificationFilters.visibility = View.VISIBLE
-        }
-
-        val filterAdapter = FilterAdapter(filterList) { selectedFilter ->
-            when (selectedFilter.type) {
-                FilterType.COMMAND -> {
-                    val shouldSelectAll = selectedFilter.name == "전체선택"
-                    filterList.filter { it.type == FilterType.CATEGORY }.forEach { it.isSelected = shouldSelectAll }
-                }
-                FilterType.CATEGORY -> {
-                    selectedFilter.isSelected = !selectedFilter.isSelected
-                }
-                else -> {}
+            // 그 외 페이지에서는 기존 방식으로 뒤로가기 버튼 설정
+            binding.toolbarNotificationMain.toolbar.setNavigationIcon(R.drawable.ic_arrow_back)
+            binding.toolbarNotificationMain.toolbar.setNavigationOnClickListener {
+                findNavController().navigateUp()
             }
-            (binding.recyclerviewNotificationFilters.adapter as FilterAdapter).notifyDataSetChanged()
-            applyFilters()
         }
-        binding.recyclerviewNotificationFilters.adapter = filterAdapter
     }
 
     private fun setupNotificationRecyclerView() {
@@ -148,6 +131,47 @@ class FragmentNotificationMain : Fragment() {
         binding.recyclerviewNotificationList.layoutManager = LinearLayoutManager(context)
     }
 
+    private fun updateFavoritesStateAndApplySort() {
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            sortAndDisplayList()
+            return
+        }
+
+        db.collection("users").document(userId).get().addOnSuccessListener { document ->
+            if (document != null && document.exists()) {
+                val favoriteIds = document.get("favorites") as? List<String> ?: emptyList()
+                allNotifications.forEach { notice ->
+                    val noticeDocId = "${notice.category}_${notice.id}"
+                    notice.isFavorite = favoriteIds.contains(noticeDocId)
+                }
+            }
+            sortAndDisplayList()
+        }.addOnFailureListener {
+            sortAndDisplayList()
+        }
+    }
+
+    private fun sortAndDisplayList() {
+        if (args.categoryName != "인기글") {
+            notificationAdapter.submitList(allNotifications)
+            return
+        }
+
+        // ❗️ 2. 정렬 오류 해결
+        // 'id' 대신 'date'를 기준으로 정렬합니다.
+        val sortedList = when (currentSortOrder) {
+            SortOrder.VIEWS -> allNotifications.sortedByDescending { it.viewCount }
+            SortOrder.LATEST -> allNotifications.sortedByDescending { it.date }
+            SortOrder.OLDEST -> allNotifications.sortedBy { it.date }
+        }
+
+        notificationAdapter.submitList(sortedList) {
+            binding.recyclerviewNotificationList.scrollToPosition(0)
+        }
+    }
+
+    // ... (openInAppBrowser, updateFavoriteStatus, onDestroyView 함수는 기존과 동일)
     private fun openInAppBrowser(url: String) {
         if (url.isNotEmpty()) {
             try {
@@ -167,14 +191,12 @@ class FragmentNotificationMain : Fragment() {
         val noticeDocId = "${notice.category}_${notice.id}"
         val newFavoriteState = !notice.isFavorite
 
-        // 1. UI를 즉시 업데이트
         val message = if (newFavoriteState) "즐겨찾기에 추가되었습니다." else "즐겨찾기에서 삭제되었습니다."
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 
         val indexInAllList = allNotifications.indexOfFirst { it.id == notice.id && it.category == notice.category }
         if (indexInAllList != -1) {
             allNotifications[indexInAllList].isFavorite = newFavoriteState
-
             val currentAdapterList = notificationAdapter.currentList
             val indexInAdapter = currentAdapterList.indexOfFirst { it.id == notice.id && it.category == notice.category }
             if (indexInAdapter != -1) {
@@ -182,7 +204,6 @@ class FragmentNotificationMain : Fragment() {
             }
         }
 
-        // 2. Firestore 데이터베이스를 백그라운드에서 업데이트
         val updateTask = if (newFavoriteState) {
             userDocRef.update("favorites", FieldValue.arrayUnion(noticeDocId))
         } else {
@@ -193,43 +214,11 @@ class FragmentNotificationMain : Fragment() {
         }
     }
 
-    private fun updateFavoritesStateAndApplyFilters() {
-        val userId = auth.currentUser?.uid
-        if (userId == null) {
-            applyFilters()
-            return
-        }
-
-        db.collection("users").document(userId).get().addOnSuccessListener { document ->
-            if (document != null && document.exists()) {
-                val favoriteIds = document.get("favorites") as? List<String> ?: emptyList()
-                allNotifications.forEach { notice ->
-                    val noticeDocId = "${notice.category}_${notice.id}"
-                    notice.isFavorite = favoriteIds.contains(noticeDocId)
-                }
-            }
-            applyFilters()
-        }.addOnFailureListener {
-            applyFilters()
-        }
-    }
-
-    private fun applyFilters() {
-        val selectedCategories = filterList.filter { it.type == FilterType.CATEGORY && it.isSelected }.map { it.name }
-        var filteredList = allNotifications.toList()
-
-        if (args.categoryName == "전체" || args.categoryName == "인기글") {
-            if (selectedCategories.isNotEmpty()) {
-                filteredList = filteredList.filter { notice -> selectedCategories.contains(notice.category) }
-            } else {
-                filteredList = emptyList()
-            }
-        }
-        notificationAdapter.submitList(filteredList)
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
+        if (activity is AppCompatActivity) {
+            (activity as AppCompatActivity).setSupportActionBar(null)
+        }
         _binding = null
     }
 }

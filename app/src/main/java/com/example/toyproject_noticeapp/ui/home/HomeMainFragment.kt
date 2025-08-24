@@ -102,6 +102,10 @@ class HomeMainFragment : Fragment() {
         binding.imageviewSearch.setOnClickListener {
             findNavController().navigate(R.id.action_home_to_search)
         }
+        // ❗️ 알림 내역 아이콘 클릭 리스너
+        binding.imageviewNotifications.setOnClickListener {
+            findNavController().navigate(R.id.action_home_to_notification_history)
+        }
         binding.imageviewSettings.setOnClickListener {
             findNavController().navigate(R.id.action_home_to_settings)
         }
