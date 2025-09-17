@@ -1,26 +1,20 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:autoMirrored="true"
-    android:height="24dp"
-    android:width="24dp"
+    android:height="40dp"
+    android:width="40dp"
     android:viewportHeight="24"
     android:viewportWidth="24">
 
-    <!-- 첫 번째 경로: 금색 채움 + 어두운 보라색 테두리 -->
+    <!-- 첫 번째 경로: 보라색 채움 -->
     <path
-        android:fillColor="#FFD700"
-        android:strokeColor="#301934"
-        android:strokeWidth="1"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M10.268,21a2,2 0,0 0,3.464 0" />
+        android:fillColor="#6A0DAD"
+        android:strokeWidth="0"
+        android:pathData="M9.5,20.5 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0 -5,0" />
 
-    <!-- 두 번째 경로: 금색 채움 + 어두운 보라색 테두리 -->
+    <!-- 두 번째 경로: 보라색 채움 -->
     <path
-        android:fillColor="#FFD700"
-        android:strokeColor="#301934"
-        android:strokeWidth="1"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M3.262,15.326A1,1 0,0 0,4 17h16a1,1 0,0 0,0.74 -1.673C19.41,13.956 18,12.499 18,8A6,6 0,0 0,6 8c0,4.499 -1.411,5.956 -2.738,7.326" />
+        android:fillColor="#6A0DAD"
+        android:strokeWidth="0"
+        android:pathData="M3.262,15.326A1,1 0,0 0,4 17 A 8 3 0 0 1 20 17a1,1 0,0 0,0.74 -1.673C19.41,13.956 18,12.499 18,8A6,6 0,0 0,6 8c0,4.499 -1.411,5.956 -2.738,7.326" />
 
 </vector>
