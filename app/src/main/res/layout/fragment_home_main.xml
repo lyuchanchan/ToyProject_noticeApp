@@ -22,13 +22,12 @@
         android:id="@+id/textview_app_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="8dp"
         android:text="Hanshin Now!"
         android:textColor="@color/black"
-        android:textSize="24sp"
+        android:textSize="20sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
-        app:layout_constraintEnd_toStartOf="@+id/imageview_search"
         app:layout_constraintStart_toEndOf="@id/imageview_app_icon"
         app:layout_constraintTop_toTopOf="@id/imageview_app_icon" />
 
