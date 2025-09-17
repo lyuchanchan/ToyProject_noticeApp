@@ -9,21 +9,20 @@ import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
 import android.os.Build
-import android.util.Log // ❗️ 로그 확인을 위해 추가
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.toyproject_noticeapp.MainActivity
 import com.example.toyproject_noticeapp.R
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import java.util.concurrent.atomic.AtomicInteger
-import com.google.firebase.auth.ktx.auth // ❗️ 추가
-import com.google.firebase.firestore.ktx.firestore // ❗️ 추가
-import com.google.firebase.ktx.Firebase // ❗️ 추가
 
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
-    // ❗️ onMessageReceived 함수를 아래 코드로 수정합니다.
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
@@ -31,8 +30,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         Log.d(TAG, "FCM Notification Title: ${remoteMessage.notification?.title}")
         Log.d(TAG, "FCM Notification Body: ${remoteMessage.notification?.body}")
 
-        // ❗️ notification 페이로드가 있을 때만 sendNotification 호출
-        // ❗️ 이렇게 하면 앱이 포그라운드/백그라운드 상태 모두에서 알림을 표시할 수 있습니다.
         remoteMessage.notification?.let {
             sendNotification(it.title ?: "새로운 공지", it.body ?: "내용 없음")
         }
@@ -41,6 +38,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d(TAG, "Refreshed token: $token")
+        // 👇 *** 여기가 핵심 수정 사항입니다! ***
+        sendRegistrationToServer(token)
     }
 
     private fun sendNotification(title: String, body: String) {
@@ -63,7 +62,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.mipmap.ic_launcher) // ❗️ 아이콘을 mipmap/ic_launcher로 변경
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
@@ -74,7 +73,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val summaryNotification = NotificationCompat.Builder(this, channelId)
             .setContentTitle("Hanshin Now!")
             .setContentText("새로운 공지가 도착했습니다.")
-            .setSmallIcon(R.mipmap.ic_launcher) // ❗️ 아이콘을 mipmap/ic_launcher로 변경
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setStyle(NotificationCompat.InboxStyle().setSummaryText("새로운 공지"))
             .setGroup(notificationGroupId)
             .setGroupSummary(true)
@@ -84,7 +83,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         notificationManager.notify(SUMMARY_ID, summaryNotification)
     }
 
-    // ❗️ 새 토큰을 Firestore에 저장하는 함수 추가
     private fun sendRegistrationToServer(token: String?) {
         val uid = Firebase.auth.currentUser?.uid
         if (uid != null && token != null) {
@@ -96,7 +94,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     companion object {
-        private const val TAG = "MyFirebaseMsgService" // ❗️ 로그 태그 추가
+        private const val TAG = "MyFirebaseMsgService"
         private const val SUMMARY_ID = 0
         private val NotificationID = AtomicInteger(1)
     }
