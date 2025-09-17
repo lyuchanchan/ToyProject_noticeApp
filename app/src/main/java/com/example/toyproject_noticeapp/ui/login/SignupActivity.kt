@@ -1,3 +1,5 @@
+// app/src/main/java/com/example/toyproject_noticeapp/ui/login/SignupActivity.kt
+
 package com.example.toyproject_noticeapp.ui.login
 
 import android.content.Intent
@@ -44,7 +46,18 @@ class SignupActivity : AppCompatActivity() {
                     if (task.isSuccessful) {
                         val user = auth.currentUser
                         if (user != null) {
-                            val userProfile = hashMapOf("name" to name)
+                            // --- 👇 *** 여기가 핵심 수정 사항입니다! *** 👇 ---
+                            val allSubscriptionNames = listOf(
+                                "공지사항", "학사공지", "행사공지", "장학공지", "취업공지", "AISW계열 공지사항"
+                            )
+                            val userProfile = hashMapOf(
+                                "name" to name,
+                                "subscriptions" to allSubscriptionNames, // 기본 구독 목록 추가
+                                "includeKeywords" to emptyList<String>(), // 빈 키워드 목록 추가
+                                "excludeKeywords" to emptyList<String>()  // 빈 제외 키워드 목록 추가
+                            )
+                            // --- 👆 *** 여기가 핵심 수정 사항입니다! *** 👆 ---
+
 
                             // Firestore에 사용자 정보를 저장
                             db.collection("users").document(user.uid).set(userProfile)
