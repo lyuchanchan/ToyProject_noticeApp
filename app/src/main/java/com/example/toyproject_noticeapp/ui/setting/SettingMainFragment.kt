@@ -79,25 +79,21 @@ class SettingMainFragment : Fragment() {
                 val userName = document.getString("name")
                 binding.textviewSettingName.text = if (!userName.isNullOrEmpty()) "${userName}님" else "이름 없음"
 
-                // 구독 설정 불러오기
                 val subscribed = document.get("subscriptions") as? List<String> ?: allSubscriptionNames
                 subscriptionList.clear()
                 subscriptionList.addAll(allSubscriptionNames.map { Subscription(it, subscribed.contains(it)) })
                 subscriptionAdapter.submitList(subscriptionList.toList())
 
-                // 포함 키워드 불러오기
                 val includeKeywords = document.get("includeKeywords") as? List<String> ?: emptyList()
                 includeKeywordList.clear()
                 includeKeywordList.addAll(includeKeywords.map { Keyword(it) })
                 includeKeywordAdapter.submitList(includeKeywordList.toList())
 
-                // 제외 키워드 불러오기
                 val excludeKeywords = document.get("excludeKeywords") as? List<String> ?: emptyList()
                 excludeKeywordList.clear()
                 excludeKeywordList.addAll(excludeKeywords.map { Keyword(it) })
                 excludeKeywordAdapter.submitList(excludeKeywordList.toList())
             } else {
-                // 문서가 없으면 기본값으로 초기화
                 val defaultSubscriptions = allSubscriptionNames
                 val initialSettings = hashMapOf(
                     "name" to (currentUser.displayName ?: ""),
@@ -107,7 +103,7 @@ class SettingMainFragment : Fragment() {
                     "excludeKeywords" to emptyList<String>()
                 )
                 userDocRef.set(initialSettings).addOnSuccessListener {
-                    loadUserSettings() // 재귀 호출로 UI 업데이트
+                    loadUserSettings()
                 }
             }
         }.addOnFailureListener {
@@ -122,9 +118,7 @@ class SettingMainFragment : Fragment() {
     }
 
     private fun setupRecyclerViews() {
-        // 구독 리사이클러뷰
         subscriptionAdapter = SettingSubscriptionAdapter { subscription, isChecked ->
-            // ❗️ 타입을 Map<String, Any>로 명시적으로 지정
             val updateData: Map<String, Any> = hashMapOf(
                 "subscriptions" to if (isChecked) {
                     FieldValue.arrayUnion(subscription.name)
@@ -136,7 +130,6 @@ class SettingMainFragment : Fragment() {
         }
         binding.recyclerviewSettingSubscriptions.adapter = subscriptionAdapter
 
-        // 포함 키워드 리사이클러뷰
         includeKeywordAdapter = SettingKeywordAdapter { keyword ->
             userDocRef.update("includeKeywords", FieldValue.arrayRemove(keyword.text))
             includeKeywordList.remove(keyword)
@@ -148,7 +141,6 @@ class SettingMainFragment : Fragment() {
         }
         binding.recyclerviewSettingIncludeKeywords.adapter = includeKeywordAdapter
 
-        // 제외 키워드 리사이클러뷰
         excludeKeywordAdapter = SettingKeywordAdapter { keyword ->
             userDocRef.update("excludeKeywords", FieldValue.arrayRemove(keyword.text))
             excludeKeywordList.remove(keyword)
@@ -181,7 +173,10 @@ class SettingMainFragment : Fragment() {
         binding.buttonAddExcludeKeyword.setOnClickListener {
             val keywordText = binding.edittextExcludeKeyword.text.toString().trim()
             if (keywordText.isNotEmpty()) {
-                userDocRef.update("excludeKeywords", FieldValue.arrayRemove(keywordText))
+                // --- 👇 *** 여기가 핵심 수정 사항입니다! *** 👇 ---
+                // arrayRemove를 arrayUnion으로 변경하여 DB에 추가하도록 수정
+                userDocRef.update("excludeKeywords", FieldValue.arrayUnion(keywordText))
+                // --- 👆 *** 여기가 핵심 수정 사항입니다! *** 👆 ---
                 excludeKeywordList.add(Keyword(keywordText))
                 excludeKeywordAdapter.submitList(excludeKeywordList.toList())
                 binding.edittextExcludeKeyword.text.clear()
