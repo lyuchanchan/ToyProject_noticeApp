@@ -120,13 +120,13 @@ class HomeMainFragment : Fragment() {
 
     private fun setupRecyclerViews() {
         val shortcutList = listOf(
-            Shortcut(R.drawable.home_icon_1, "홈페이지", "https://www.hs.ac.kr/kor/index.do"),
-            Shortcut(R.drawable.home_icon_calendar, "학사일정", "https://www.hs.ac.kr/kor/4837/subview.do"),
-            Shortcut(R.drawable.home_icon_haksa, "학사공지", "BOARD"),
             Shortcut(R.drawable.home_icon_chuiup, "공지사항", "BOARD"),
+            Shortcut(R.drawable.home_icon_haksa, "학사공지", "BOARD"),
             Shortcut(R.drawable.home_icon_festival, "행사공지", "BOARD"),
             Shortcut(R.drawable.home_icon_scholarship, "장학공지", "BOARD"),
             Shortcut(R.drawable.home_icon_check, "취업공지", "BOARD"),
+            Shortcut(R.drawable.home_icon_1, "홈페이지", "https://www.hs.ac.kr/kor/index.do"),
+            Shortcut(R.drawable.home_icon_calendar, "학사일정", "https://www.hs.ac.kr/kor/4837/subview.do"),
             Shortcut(R.drawable.home_icon_food, "식단표", "https://www.hs.ac.kr/kor/8398/subview.do"),
             Shortcut(R.drawable.home_icon_bus, "셔틀버스", "https://www.hs.ac.kr/kor/4984/subview.do"),
             Shortcut(R.drawable.home_icon_check, "AISW계열", "BOARD")

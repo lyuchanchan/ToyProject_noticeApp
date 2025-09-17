@@ -104,7 +104,7 @@ class FragmentNotificationMain : Fragment() {
     }
 
     private fun setupToolbar() {
-        val toolbarTitle = if (args.categoryName == "인기글") "이 달의 인기글" else args.categoryName
+        val toolbarTitle = if (args.categoryName == "인기글") "Now! 인기글" else args.categoryName
         binding.toolbarNotificationMain.toolbar.title = toolbarTitle
 
         // '인기글' 페이지일 때만 SupportActionBar로 설정하여 메뉴를 표시
