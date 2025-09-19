@@ -109,10 +109,6 @@ class HomeMainFragment : Fragment() {
         binding.imageviewSettings.setOnClickListener {
             findNavController().navigate(R.id.action_home_to_settings)
         }
-        binding.textviewHomePopularMore.setOnClickListener {
-            val bundle = bundleOf("categoryName" to "인기글")
-            findNavController().navigate(R.id.action_home_to_notice_list, bundle)
-        }
         binding.textviewHomeFavoriteMore.setOnClickListener {
             findNavController().navigate(R.id.action_home_to_favorites)
         }
