@@ -90,7 +90,7 @@ class HomeMainFragment : Fragment() {
         loadShortcutPreferences()
         setupClickListeners()
         setupRecyclerViews()
-        setupItemTouchHelpers() 
+        setupItemTouchHelpers()
         fetchData()
     }
 
@@ -104,12 +104,12 @@ class HomeMainFragment : Fragment() {
             val hiddenNames = hiddenNamesString.split(',').filter { it.isNotEmpty() }
             visibleShortcutsData = visibleNames.mapNotNull { name -> masterShortcutList.find { it.name == name } }.toMutableList()
             hiddenShortcutsData = hiddenNames.mapNotNull { name -> masterShortcutList.find { it.name == name } }.toMutableList()
-            
+
             val accountedForNames = (visibleShortcutsData.map { it.name } + hiddenShortcutsData.map { it.name }).toSet()
             masterShortcutList.forEach { shortcut ->
                 if (!accountedForNames.contains(shortcut.name)) {
-                    if (!hiddenShortcutsData.any { it.name == shortcut.name } && !visibleShortcutsData.any {it.name == shortcut.name }) { 
-                        hiddenShortcutsData.add(shortcut) 
+                    if (!hiddenShortcutsData.any { it.name == shortcut.name } && !visibleShortcutsData.any {it.name == shortcut.name }) {
+                        hiddenShortcutsData.add(shortcut)
                     }
                 }
             }
@@ -144,24 +144,24 @@ class HomeMainFragment : Fragment() {
             binding.dividerHiddenShortcuts.visibility = View.VISIBLE
             binding.textviewHiddenShortcutsTitle.visibility = View.VISIBLE
             binding.recyclerviewHiddenShortcuts.visibility = View.VISIBLE
-            
+
             val minHeightPx = MIN_TARGET_HEIGHT_DP.dpToPx(requireContext())
             binding.recyclerviewHomeShortcuts.minimumHeight = minHeightPx
             binding.recyclerviewHiddenShortcuts.minimumHeight = minHeightPx
-            
-            binding.recyclerviewHomeShortcuts.isNestedScrollingEnabled = false 
+
+            binding.recyclerviewHomeShortcuts.isNestedScrollingEnabled = false
             visibleItemTouchHelper?.attachToRecyclerView(binding.recyclerviewHomeShortcuts)
             hiddenItemTouchHelper?.attachToRecyclerView(binding.recyclerviewHiddenShortcuts)
-        } else { 
+        } else {
             binding.textviewHomeShortcutEdit.text = "편집"
             binding.dividerHiddenShortcuts.visibility = View.GONE
             binding.textviewHiddenShortcutsTitle.visibility = View.GONE
             binding.recyclerviewHiddenShortcuts.visibility = View.GONE
-            
+
             binding.recyclerviewHomeShortcuts.minimumHeight = 0
             binding.recyclerviewHiddenShortcuts.minimumHeight = 0
 
-            binding.recyclerviewHomeShortcuts.isNestedScrollingEnabled = true 
+            binding.recyclerviewHomeShortcuts.isNestedScrollingEnabled = true
             visibleItemTouchHelper?.attachToRecyclerView(null)
             hiddenItemTouchHelper?.attachToRecyclerView(null)
             saveShortcutPreferences()
@@ -205,7 +205,7 @@ class HomeMainFragment : Fragment() {
             private var dragInProgressViewHolder: RecyclerView.ViewHolder? = null
             private var dragInProgressSourceRecyclerView: RecyclerView? = null
             private var isOverTargetForDrop: Boolean = false
-            private var draggedItemData: Shortcut? = null 
+            private var draggedItemData: Shortcut? = null
             private var originalDragPosition: Int = RecyclerView.NO_POSITION
 
             override fun onMove(
@@ -217,7 +217,7 @@ class HomeMainFragment : Fragment() {
                 if (fromPosition != RecyclerView.NO_POSITION && toPosition != RecyclerView.NO_POSITION) {
                     adapter.moveItem(fromPosition, toPosition)
                 }
-                return true 
+                return true
             }
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
@@ -228,13 +228,24 @@ class HomeMainFragment : Fragment() {
                 super.onSelectedChanged(viewHolder, actionState)
                 when (actionState) {
                     ItemTouchHelper.ACTION_STATE_DRAG -> {
-                        if (viewHolder != null && isEditMode) { 
+                        if (viewHolder != null && isEditMode) {
+                            viewHolder.itemView.alpha = 0.7f
+                            viewHolder.itemView.elevation = 16f
+                            viewHolder.itemView.animate().scaleX(1.1f).scaleY(1.1f).setDuration(100).start()
+
                             dragInProgressViewHolder = viewHolder
                             dragInProgressSourceRecyclerView = viewHolder.itemView.parent as? RecyclerView
                             binding.nestedScrollView.requestDisallowInterceptTouchEvent(true)
-                            viewHolder.itemView.alpha = 0.7f 
                             isOverTargetForDrop = false
-                            originalDragPosition = viewHolder.adapterPosition 
+                            originalDragPosition = viewHolder.adapterPosition
+
+                            if (dragInProgressSourceRecyclerView?.id == binding.recyclerviewHomeShortcuts.id) {
+                                binding.recyclerviewHomeShortcuts.elevation = 20f
+                                binding.recyclerviewHiddenShortcuts.elevation = 10f
+                            } else {
+                                binding.recyclerviewHiddenShortcuts.elevation = 20f
+                                binding.recyclerviewHomeShortcuts.elevation = 10f
+                            }
 
                             if (originalDragPosition != RecyclerView.NO_POSITION && dragInProgressSourceRecyclerView != null) {
                                 val sourceAdapterCurrent = if (dragInProgressSourceRecyclerView!!.id == binding.recyclerviewHomeShortcuts.id) {
@@ -274,21 +285,22 @@ class HomeMainFragment : Fragment() {
                             }
 
                             if (fromAdapter != null && targetAdapter != null && fromAdapter != targetAdapter) {
-                                if (originalDragPosition >= 0 && originalDragPosition < fromAdapter.itemCount) {
-                                    val itemAtOriginalPos = fromAdapter.items.getOrNull(originalDragPosition)
-                                    
+                                val currentPosition = dragInProgressViewHolder?.adapterPosition ?: originalDragPosition
+                                if (currentPosition >= 0 && currentPosition < fromAdapter.itemCount) {
+                                    val itemAtOriginalPos = fromAdapter.items.getOrNull(currentPosition)
+
                                     val areItemsLogicallyEqual = if (itemAtOriginalPos != null && draggedItemData != null) {
                                         itemAtOriginalPos.name == draggedItemData!!.name &&
-                                        itemAtOriginalPos.url == draggedItemData!!.url &&
-                                        itemAtOriginalPos.iconResId == draggedItemData!!.iconResId
+                                                itemAtOriginalPos.url == draggedItemData!!.url &&
+                                                itemAtOriginalPos.iconResId == draggedItemData!!.iconResId
                                     } else {
-                                        itemAtOriginalPos == draggedItemData 
+                                        itemAtOriginalPos == draggedItemData
                                     }
 
-                                    if (areItemsLogicallyEqual) { 
-                                        fromAdapter.removeItem(originalDragPosition) 
-                                        targetAdapter.addItem(draggedItemData!!)      
-                                        
+                                    if (areItemsLogicallyEqual) {
+                                        fromAdapter.removeItem(currentPosition)
+                                        targetAdapter.addItem(draggedItemData!!)
+
                                         fromAdapter.notifyDataSetChanged()
                                         targetAdapter.notifyDataSetChanged()
 
@@ -305,10 +317,10 @@ class HomeMainFragment : Fragment() {
                                         print(logMessage)
                                         print("############################################################")
                                         Toast.makeText(context, "드롭 오류: 아이템 불일치 (명시적 비교, 로그 확인)", Toast.LENGTH_LONG).show()
-                                        fromAdapter.notifyDataSetChanged() 
+                                        fromAdapter.notifyDataSetChanged()
                                     }
                                 } else {
-                                     val logMessage = """
+                                    val logMessage = """
                                         드롭 오류: 원래 위치가 잘못됨 ($originalDragPosition)
                                         draggedItemData: name='${draggedItemData?.name}', url='${draggedItemData?.url}', iconResId=${draggedItemData?.iconResId}
                                         fromAdapter.itemCount: ${fromAdapter?.itemCount}
@@ -317,10 +329,10 @@ class HomeMainFragment : Fragment() {
                                     print(logMessage)
                                     print("#######################################################")
                                     Toast.makeText(context, "드롭 오류: 원래 위치가 잘못됨 (로그 확인)", Toast.LENGTH_SHORT).show()
-                                    fromAdapter?.notifyDataSetChanged() 
+                                    fromAdapter?.notifyDataSetChanged()
                                 }
-                            } 
-                        } else if (isOverTargetForDrop) { 
+                            }
+                        } else if (isOverTargetForDrop) {
                             val logMessage = """
                                 드롭 실패: 드롭 대상 위였으나, 주요 데이터 누락
                                 draggedItemData is null: ${draggedItemData == null}
@@ -335,14 +347,14 @@ class HomeMainFragment : Fragment() {
                             val sourceAdapterToNotify = if (dragInProgressSourceRecyclerView?.id == binding.recyclerviewHomeShortcuts.id) shortcutAdapter else if (dragInProgressSourceRecyclerView?.id == binding.recyclerviewHiddenShortcuts.id) hiddenShortcutAdapter else null
                             sourceAdapterToNotify?.notifyDataSetChanged()
                         }
-                        
+
                         binding.recyclerviewHomeShortcuts.setBackgroundColor(Color.TRANSPARENT)
                         binding.recyclerviewHiddenShortcuts.setBackgroundColor(Color.TRANSPARENT)
                         dragInProgressViewHolder = null
                         dragInProgressSourceRecyclerView = null
                         draggedItemData = null
                         originalDragPosition = RecyclerView.NO_POSITION
-                        isOverTargetForDrop = false 
+                        isOverTargetForDrop = false
                     }
                 }
             }
@@ -355,7 +367,7 @@ class HomeMainFragment : Fragment() {
                 if (actionState == ItemTouchHelper.ACTION_STATE_DRAG && isCurrentlyActive) {
                     val itemView = viewHolder.itemView
                     val rvScreenLocation = IntArray(2)
-                    recyclerView.getLocationOnScreen(rvScreenLocation) 
+                    recyclerView.getLocationOnScreen(rvScreenLocation)
 
                     val draggedItemScreenRect = Rect(
                         (rvScreenLocation[0] + itemView.left + dX).toInt(),
@@ -372,11 +384,11 @@ class HomeMainFragment : Fragment() {
                     val otherRvRect = Rect()
                     otherRecyclerView.getGlobalVisibleRect(otherRvRect)
 
-                    if (otherRecyclerView.visibility == View.VISIBLE && 
-                        !otherRvRect.isEmpty && 
-                        !draggedItemScreenRect.isEmpty && 
+                    if (otherRecyclerView.visibility == View.VISIBLE &&
+                        !otherRvRect.isEmpty &&
+                        !draggedItemScreenRect.isEmpty &&
                         Rect.intersects(draggedItemScreenRect, otherRvRect)) {
-                        otherRecyclerView.setBackgroundColor(Color.parseColor("#E0E0E0")) 
+                        otherRecyclerView.setBackgroundColor(Color.parseColor("#E0E0E0"))
                         isOverTargetForDrop = true
                     } else {
                         otherRecyclerView.setBackgroundColor(Color.TRANSPARENT)
@@ -387,9 +399,15 @@ class HomeMainFragment : Fragment() {
 
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
-                viewHolder.itemView.alpha = 1.0f 
+                viewHolder.itemView.alpha = 1.0f
+                viewHolder.itemView.elevation = 0f
+                viewHolder.itemView.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start()
+
                 binding.recyclerviewHomeShortcuts.setBackgroundColor(Color.TRANSPARENT)
                 binding.recyclerviewHiddenShortcuts.setBackgroundColor(Color.TRANSPARENT)
+
+                binding.recyclerviewHomeShortcuts.elevation = 0f
+                binding.recyclerviewHiddenShortcuts.elevation = 0f
             }
         }
         visibleItemTouchHelper = ItemTouchHelper(commonItemTouchCallback)
@@ -420,7 +438,7 @@ class HomeMainFragment : Fragment() {
                         popularAdapter.submitList(updatedList)
                     }
                 } else {
-                     popularAdapter.submitList(emptyList()) 
+                    popularAdapter.submitList(emptyList())
                 }
             }
             .addOnFailureListener { e ->
@@ -440,9 +458,9 @@ class HomeMainFragment : Fragment() {
                     val favoriteIds = document.get("favorites") as? List<String>
                     val validFavoriteIds = favoriteIds?.filter { it.isNotBlank() }
                     if (!validFavoriteIds.isNullOrEmpty()) {
-                        binding.recyclerviewHomeShortcuts.visibility = View.VISIBLE 
+                        binding.recyclerviewHomeShortcuts.visibility = View.VISIBLE
                         binding.textviewHomeFavoriteEmpty.visibility = View.GONE
-                        val recentFavoriteIds = validFavoriteIds.reversed().take(1) 
+                        val recentFavoriteIds = validFavoriteIds.reversed().take(1)
                         if (recentFavoriteIds.isNotEmpty()) {
                             db.collection("notices").whereIn(com.google.firebase.firestore.FieldPath.documentId(), recentFavoriteIds).get()
                                 .addOnSuccessListener { noticeDocuments ->
@@ -462,9 +480,9 @@ class HomeMainFragment : Fragment() {
                                         }
                                         favoriteAdapter.submitList(favoritePreviewList)
                                     } else {
-                                        showEmptyFavorites() 
+                                        showEmptyFavorites()
                                     }
-                                 }
+                                }
                                 .addOnFailureListener { e ->
                                     Toast.makeText(context, "[즐겨찾기] 글 로드 실패: ${e.message}", Toast.LENGTH_LONG).show()
                                     showEmptyFavorites()
@@ -494,7 +512,7 @@ class HomeMainFragment : Fragment() {
     private fun updateFavoriteStatus(notice: DataNotificationItem) {
         val userId = auth.currentUser?.uid ?: return
         val userDocRef = db.collection("users").document(userId)
-        val noticeDocId = "${notice.category}_${notice.id}" 
+        val noticeDocId = "${notice.category}_${notice.id}"
         val newFavoriteState = !notice.isFavorite
 
         val message = if (newFavoriteState) "즐겨찾기에 추가되었습니다." else "즐겨찾기에서 삭제되었습니다."
@@ -504,7 +522,7 @@ class HomeMainFragment : Fragment() {
         val popularIndex = popularList.indexOfFirst { it.id == notice.id && it.category == notice.category }
         if (popularIndex != -1) {
             popularList[popularIndex].isFavorite = newFavoriteState
-            popularAdapter.submitList(popularList.toList()) 
+            popularAdapter.submitList(popularList.toList())
         }
 
         fetchHomeFavorites()
@@ -516,11 +534,11 @@ class HomeMainFragment : Fragment() {
         }
         updateTask.addOnFailureListener {
             Toast.makeText(context, "즐겨찾기 상태 변경 실패 (DB)", Toast.LENGTH_SHORT).show()
-            fetchHomeFavorites() 
+            fetchHomeFavorites()
             val currentPopular = popularAdapter.currentList.toMutableList()
             val pIndex = currentPopular.indexOfFirst { it.id == notice.id && it.category == notice.category }
             if (pIndex != -1) {
-                currentPopular[pIndex].isFavorite = !newFavoriteState 
+                currentPopular[pIndex].isFavorite = !newFavoriteState
                 popularAdapter.submitList(currentPopular.toList())
             }
         }
@@ -536,13 +554,13 @@ class HomeMainFragment : Fragment() {
             if (document != null && document.exists()) {
                 val favoriteIds = document.get("favorites") as? List<String> ?: emptyList()
                 list.forEach { notice ->
-                    val noticeDocId = "${notice.category}_${notice.id}" 
+                    val noticeDocId = "${notice.category}_${notice.id}"
                     notice.isFavorite = favoriteIds.contains(noticeDocId)
                 }
             }
             onComplete(list)
-        }.addOnFailureListener { 
-            onComplete(list) 
+        }.addOnFailureListener {
+            onComplete(list)
         }
     }
 

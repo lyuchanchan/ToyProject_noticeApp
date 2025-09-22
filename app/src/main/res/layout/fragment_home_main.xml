@@ -4,7 +4,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/white"
     tools:context=".ui.home.HomeMainFragment">
 
     <ImageView
@@ -94,6 +93,8 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -102,12 +103,16 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             android:orientation="vertical"
             android:padding="16dp">
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:clipChildren="false"
+                android:clipToPadding="false"
                 app:cardBackgroundColor="@color/stylish_purple"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp">
@@ -115,6 +120,8 @@
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
                     android:padding="16dp">
 
                     <TextView
@@ -135,23 +142,25 @@
                         android:text="편집"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp"
+                        app:layout_constraintBottom_toBottomOf="@id/textview_home_shortcut_title"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="@id/textview_home_shortcut_title"
-                        app:layout_constraintBottom_toBottomOf="@id/textview_home_shortcut_title"/>
+                        app:layout_constraintTop_toTopOf="@id/textview_home_shortcut_title" />
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/recyclerview_home_shortcuts"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false"
                         android:nestedScrollingEnabled="false"
                         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/textview_home_shortcut_title"
                         app:spanCount="5"
                         tools:itemCount="10"
-                        tools:listitem="@layout/item_home_shortcut"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/textview_home_shortcut_title" />
+                        tools:listitem="@layout/item_home_shortcut" />
 
                     <View
                         android:id="@+id/divider_hidden_shortcuts"
@@ -160,9 +169,9 @@
                         android:layout_marginTop="16dp"
                         android:background="?android:attr/listDivider"
                         android:visibility="gone"
-                        app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/recyclerview_home_shortcuts"/>
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/recyclerview_home_shortcuts" />
 
                     <TextView
                         android:id="@+id/textview_hidden_shortcuts_title"
@@ -175,22 +184,24 @@
                         android:textStyle="bold"
                         android:visibility="gone"
                         app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/divider_hidden_shortcuts"/>
+                        app:layout_constraintTop_toBottomOf="@id/divider_hidden_shortcuts" />
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/recyclerview_hidden_shortcuts"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false"
                         android:nestedScrollingEnabled="false"
                         android:visibility="gone"
                         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/textview_hidden_shortcuts_title"
                         app:spanCount="5"
                         tools:itemCount="5"
-                        tools:listitem="@layout/item_home_shortcut"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/textview_hidden_shortcuts_title" />
+                        tools:listitem="@layout/item_home_shortcut" />
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -230,9 +241,9 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="더보기"
-                            android:visibility="gone"
                             android:textColor="@color/text_secondary"
                             android:textSize="14sp"
+                            android:visibility="gone"
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintTop_toTopOf="parent" />
                     </androidx.constraintlayout.widget.ConstraintLayout>
