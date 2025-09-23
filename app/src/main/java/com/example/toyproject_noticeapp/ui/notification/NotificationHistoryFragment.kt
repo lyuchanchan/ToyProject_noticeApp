@@ -15,6 +15,7 @@ import com.example.toyproject_noticeapp.adapter.AdapterNotificationList
 import com.example.toyproject_noticeapp.data.DataNotificationItem
 import com.example.toyproject_noticeapp.databinding.FragmentNotificationHistoryBinding
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -51,16 +52,19 @@ class NotificationHistoryFragment : Fragment() {
         }
     }
 
+    // --- 👇 *** 여기가 핵심 수정 사항입니다! *** 👇 ---
     private fun setupRecyclerView() {
         notificationAdapter = AdapterNotificationList(
             onItemClick = { notice -> openInAppBrowser(notice.url) },
-            onFavoriteClick = {
-                Toast.makeText(context, "이 화면에서는 즐겨찾기를 변경할 수 없습니다.", Toast.LENGTH_SHORT).show()
+            onFavoriteClick = { notice ->
+                // Toast 메시지 대신 즐겨찾기 업데이트 함수 호출
+                updateFavoriteStatus(notice)
             }
         )
         binding.recyclerviewNotificationHistoryList.adapter = notificationAdapter
         binding.recyclerviewNotificationHistoryList.layoutManager = LinearLayoutManager(context)
     }
+    // --- 👆 *** 여기가 핵심 수정 사항입니다! *** 👆 ---
 
     private fun loadNotificationHistory() {
         val uid = auth.currentUser?.uid
@@ -70,20 +74,37 @@ class NotificationHistoryFragment : Fragment() {
         }
 
         db.collection("users").document(uid).collection("notification_history")
-            .orderBy("timestamp", Query.Direction.DESCENDING) // "DESCENDING"이 최신순 정렬입니다.
+            .orderBy("timestamp", Query.Direction.DESCENDING)
             .get()
             .addOnSuccessListener { documents ->
-                // ❗️ 핵심: Firestore가 정렬해준 순서를 100% 보장하기 위해
-                // documents를 직접 map으로 순회하여 새 리스트를 만듭니다.
                 val historyList = documents.map { doc ->
                     doc.toObject(DataNotificationItem::class.java)
                 }
-                notificationAdapter.submitList(historyList)
+                updateFavoritesState(historyList) // 즐겨찾기 상태 업데이트
             }
             .addOnFailureListener {
                 Toast.makeText(context, "알림 내역을 불러오는데 실패했습니다.", Toast.LENGTH_SHORT).show()
             }
     }
+
+    // --- 👇 *** 여기가 핵심 수정 사항입니다! *** 👇 ---
+    private fun updateFavoritesState(historyList: List<DataNotificationItem>) {
+        val userId = auth.currentUser?.uid ?: return
+
+        db.collection("users").document(userId).get().addOnSuccessListener { document ->
+            if (document != null && document.exists()) {
+                val favoriteIds = document.get("favorites") as? List<String> ?: emptyList()
+                historyList.forEach { notice ->
+                    val noticeDocId = "${notice.category}_${notice.id}"
+                    notice.isFavorite = favoriteIds.contains(noticeDocId)
+                }
+            }
+            notificationAdapter.submitList(historyList)
+        }.addOnFailureListener {
+            notificationAdapter.submitList(historyList)
+        }
+    }
+    // --- 👆 *** 여기가 핵심 수정 사항입니다! *** 👆 ---
 
     private fun openInAppBrowser(url: String) {
         try {
@@ -93,6 +114,46 @@ class NotificationHistoryFragment : Fragment() {
             Toast.makeText(context, "페이지를 열 수 없습니다.", Toast.LENGTH_SHORT).show()
         }
     }
+
+    // --- 👇 *** 여기가 핵심 수정 사항입니다! (새로운 함수 추가) *** 👇 ---
+    private fun updateFavoriteStatus(notice: DataNotificationItem) {
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            Toast.makeText(context, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val userDocRef = db.collection("users").document(userId)
+        val noticeDocId = "${notice.category}_${notice.id}"
+        val newFavoriteState = !notice.isFavorite
+
+        val message = if (newFavoriteState) "즐겨찾기에 추가되었습니다." else "즐겨찾기에서 삭제되었습니다."
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+
+        // UI 즉시 업데이트
+        val currentList = notificationAdapter.currentList.toMutableList()
+        val index = currentList.indexOfFirst { it.id == notice.id && it.category == notice.category }
+        if (index != -1) {
+            currentList[index].isFavorite = newFavoriteState
+            notificationAdapter.notifyItemChanged(index)
+        }
+
+        // Firestore 데이터 업데이트
+        val updateTask = if (newFavoriteState) {
+            userDocRef.update("favorites", FieldValue.arrayUnion(noticeDocId))
+        } else {
+            userDocRef.update("favorites", FieldValue.arrayRemove(noticeDocId))
+        }
+
+        updateTask.addOnFailureListener {
+            Toast.makeText(context, "즐겨찾기 상태 변경에 실패했습니다.", Toast.LENGTH_SHORT).show()
+            // 실패 시 UI 원상 복구
+            if (index != -1) {
+                currentList[index].isFavorite = !newFavoriteState
+                notificationAdapter.notifyItemChanged(index)
+            }
+        }
+    }
+    // --- 👆 *** 여기가 핵심 수정 사항입니다! *** 👆 ---
 
     override fun onDestroyView() {
         super.onDestroyView()

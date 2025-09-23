@@ -51,6 +51,7 @@ class HomeMainFragment : Fragment() {
     private var hiddenItemTouchHelper: ItemTouchHelper? = null
     private lateinit var commonItemTouchCallback: ItemTouchHelper.SimpleCallback
 
+    // --- 👇 *** 여기가 핵심 수정 사항입니다! *** 👇 ---
     private val masterShortcutList by lazy {
         listOf(
             Shortcut(R.drawable.home_icon_chuiup, "공지사항", "BOARD"),
@@ -62,9 +63,11 @@ class HomeMainFragment : Fragment() {
             Shortcut(R.drawable.home_icon_calendar, "학사일정", "https://www.hs.ac.kr/kor/4837/subview.do"),
             Shortcut(R.drawable.home_icon_food, "식단표", "https://www.hs.ac.kr/kor/8398/subview.do"),
             Shortcut(R.drawable.home_icon_bus, "셔틀버스", "https://www.hs.ac.kr/kor/4984/subview.do"),
-            Shortcut(R.drawable.home_icon_check, "AISW계열", "BOARD")
+            Shortcut(R.drawable.home_icon_check, "도서관", "https://hslib.hs.ac.kr/main_main.mir") // "AISW계열" -> "도서관", URL 변경
         )
     }
+    // ---------------------------------------------
+
     private var visibleShortcutsData: MutableList<Shortcut> = mutableListOf()
     private var hiddenShortcutsData: MutableList<Shortcut> = mutableListOf()
 
@@ -174,12 +177,15 @@ class HomeMainFragment : Fragment() {
     private fun setupRecyclerViews() {
         shortcutAdapter = HomeShortcutAdapter(visibleShortcutsData) { shortcut ->
             if (!isEditMode) {
+                // --- 👇 *** 여기가 핵심 수정 사항입니다! *** 👇 ---
+                // '도서관'은 URL이 "BOARD"가 아니므로, openInAppBrowser가 호출됨
                 if (shortcut.url == "BOARD") {
                     val bundle = bundleOf("categoryName" to shortcut.name)
                     findNavController().navigate(R.id.action_home_to_notice_list, bundle)
                 } else {
                     openInAppBrowser(shortcut.url)
                 }
+                // ---------------------------------------------
             }
         }
         binding.recyclerviewHomeShortcuts.adapter = shortcutAdapter

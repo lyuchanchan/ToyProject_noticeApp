@@ -40,9 +40,12 @@ class SettingMainFragment : Fragment() {
     private val db = Firebase.firestore
     private val userDocRef by lazy { db.collection("users").document(auth.currentUser!!.uid) }
 
+    // --- 👇 *** 여기가 핵심 수정 사항입니다! *** 👇 ---
     private val allSubscriptionNames = listOf(
-        "공지사항", "학사공지", "행사공지", "장학공지", "취업공지", "AISW계열 공지사항"
+        "공지사항", "학사공지", "행사공지", "장학공지", "취업공지" // "도서관" 제거
     )
+    // ---------------------------------------------
+
     private val subscriptionList = mutableListOf<Subscription>()
     private val includeKeywordList = mutableListOf<Keyword>()
     private val excludeKeywordList = mutableListOf<Keyword>()
@@ -173,10 +176,7 @@ class SettingMainFragment : Fragment() {
         binding.buttonAddExcludeKeyword.setOnClickListener {
             val keywordText = binding.edittextExcludeKeyword.text.toString().trim()
             if (keywordText.isNotEmpty()) {
-                // --- 👇 *** 여기가 핵심 수정 사항입니다! *** 👇 ---
-                // arrayRemove를 arrayUnion으로 변경하여 DB에 추가하도록 수정
                 userDocRef.update("excludeKeywords", FieldValue.arrayUnion(keywordText))
-                // --- 👆 *** 여기가 핵심 수정 사항입니다! *** 👆 ---
                 excludeKeywordList.add(Keyword(keywordText))
                 excludeKeywordAdapter.submitList(excludeKeywordList.toList())
                 binding.edittextExcludeKeyword.text.clear()

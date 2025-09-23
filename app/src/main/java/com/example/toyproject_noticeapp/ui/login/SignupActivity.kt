@@ -48,7 +48,7 @@ class SignupActivity : AppCompatActivity() {
                         if (user != null) {
                             // --- 👇 *** 여기가 핵심 수정 사항입니다! *** 👇 ---
                             val allSubscriptionNames = listOf(
-                                "공지사항", "학사공지", "행사공지", "장학공지", "취업공지", "AISW계열 공지사항"
+                                "공지사항", "학사공지", "행사공지", "장학공지", "취업공지" // "도서관" 제거
                             )
                             val userProfile = hashMapOf(
                                 "name" to name,
