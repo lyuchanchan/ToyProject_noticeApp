@@ -10,12 +10,9 @@
 
     <ImageView
         android:id="@+id/image_shortcut_icon"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:background="@drawable/shape_home_button_background"
-        android:scaleType="centerInside"
-        android:padding="14dp"
-        tools:src="@drawable/ic_home" />
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:scaleType="centerInside" />
 
     <TextView
         android:id="@+id/text_shortcut_name"
@@ -23,7 +20,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:textColor="#555555"
-        android:textSize="13sp"
+        android:textSize="11sp"
         tools:text="홈페이지" />
 
 </LinearLayout>

@@ -65,16 +65,15 @@ class HomeMainFragment : Fragment() {
 
     private val masterShortcutList by lazy {
         listOf(
-            Shortcut(R.drawable.home_icon_chuiup, "공지사항", "BOARD"),
+            Shortcut(R.drawable.home_icon_check, "공지사항", "BOARD"),
             Shortcut(R.drawable.home_icon_haksa, "학사공지", "BOARD"),
-            Shortcut(R.drawable.home_icon_festival, "행사공지", "BOARD"),
+            Shortcut(R.drawable.home_icon_festival2, "행사공지", "BOARD"),
             Shortcut(R.drawable.home_icon_scholarship, "장학공지", "BOARD"),
-            Shortcut(R.drawable.home_icon_check, "취업공지", "BOARD"),
-            Shortcut(R.drawable.home_icon_1, "홈페이지", "https://www.hs.ac.kr/kor/index.do"),
-            Shortcut(R.drawable.home_icon_calendar, "학사일정", "https://www.hs.ac.kr/kor/4837/subview.do"),
+            Shortcut(R.drawable.home_icon_job, "취업공지", "BOARD"),
+            Shortcut(R.drawable.home_icon_chuiup, "홈페이지", "https://www.hs.ac.kr/kor/index.do"),
+            Shortcut(R.drawable.home_icon_calendar2, "학사일정", "https://www.hs.ac.kr/kor/4837/subview.do"),
             Shortcut(R.drawable.home_icon_food, "식단표", "https://www.hs.ac.kr/kor/8398/subview.do"),
-            Shortcut(R.drawable.home_icon_bus, "셔틀버스", "https://www.hs.ac.kr/kor/4984/subview.do"),
-            Shortcut(R.drawable.home_icon_check, "도서관", "https://hslib.hs.ac.kr/main_main.mir")
+            Shortcut(R.drawable.home_icon_library2, "도서관", "https://hslib.hs.ac.kr/main_main.mir")
         )
     }
 
@@ -207,11 +206,11 @@ class HomeMainFragment : Fragment() {
             }
         }
         binding.recyclerviewHomeShortcuts.adapter = shortcutAdapter
-        binding.recyclerviewHomeShortcuts.layoutManager = GridLayoutManager(context, 5)
+        binding.recyclerviewHomeShortcuts.layoutManager = GridLayoutManager(context, 3)
 
         hiddenShortcutAdapter = HomeShortcutAdapter(hiddenShortcutsData) {}
         binding.recyclerviewHiddenShortcuts.adapter = hiddenShortcutAdapter
-        binding.recyclerviewHiddenShortcuts.layoutManager = GridLayoutManager(context, 5)
+        binding.recyclerviewHiddenShortcuts.layoutManager = GridLayoutManager(context, 3)
 
         popularAdapter = AdapterNotificationList(onItemClick = { notice -> openInAppBrowser(notice.url) }, onFavoriteClick = { notice -> updateFavoriteStatus(notice) })
         binding.recyclerviewHomePopular.adapter = popularAdapter
