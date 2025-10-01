@@ -17,6 +17,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.example.toyproject_noticeapp.R
 import com.example.toyproject_noticeapp.adapter.AdapterNotificationList
@@ -24,6 +25,7 @@ import com.example.toyproject_noticeapp.adapter.HomeShortcutAdapter
 import com.example.toyproject_noticeapp.data.DataNotificationItem
 import com.example.toyproject_noticeapp.data.Shortcut
 import com.example.toyproject_noticeapp.databinding.FragmentHomeMainBinding
+import com.google.android.material.tabs.TabLayout
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ktx.firestore
@@ -50,8 +52,8 @@ class HomeMainFragment : Fragment() {
     private var visibleItemTouchHelper: ItemTouchHelper? = null
     private var hiddenItemTouchHelper: ItemTouchHelper? = null
     private lateinit var commonItemTouchCallback: ItemTouchHelper.SimpleCallback
+    private var snapHelper: PagerSnapHelper? = null // PagerSnapHelper 멤버 변수로 선언
 
-    // --- 👇 *** 여기가 핵심 수정 사항입니다! *** 👇 ---
     private val masterShortcutList by lazy {
         listOf(
             Shortcut(R.drawable.home_icon_chuiup, "공지사항", "BOARD"),
@@ -63,10 +65,9 @@ class HomeMainFragment : Fragment() {
             Shortcut(R.drawable.home_icon_calendar, "학사일정", "https://www.hs.ac.kr/kor/4837/subview.do"),
             Shortcut(R.drawable.home_icon_food, "식단표", "https://www.hs.ac.kr/kor/8398/subview.do"),
             Shortcut(R.drawable.home_icon_bus, "셔틀버스", "https://www.hs.ac.kr/kor/4984/subview.do"),
-            Shortcut(R.drawable.home_icon_check, "도서관", "https://hslib.hs.ac.kr/main_main.mir") // "AISW계열" -> "도서관", URL 변경
+            Shortcut(R.drawable.home_icon_check, "도서관", "https://hslib.hs.ac.kr/main_main.mir")
         )
     }
-    // ---------------------------------------------
 
     private var visibleShortcutsData: MutableList<Shortcut> = mutableListOf()
     private var hiddenShortcutsData: MutableList<Shortcut> = mutableListOf()
@@ -79,7 +80,7 @@ class HomeMainFragment : Fragment() {
         private const val PREFS_NAME = "HomeShortcutPrefs"
         private const val KEY_VISIBLE_SHORTCUTS = "visible_shortcuts"
         private const val KEY_HIDDEN_SHORTCUTS = "hidden_shortcuts"
-        private const val MIN_TARGET_HEIGHT_DP = 60 // Minimum height for empty drop target in DP
+        private const val MIN_TARGET_HEIGHT_DP = 60
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -177,15 +178,12 @@ class HomeMainFragment : Fragment() {
     private fun setupRecyclerViews() {
         shortcutAdapter = HomeShortcutAdapter(visibleShortcutsData) { shortcut ->
             if (!isEditMode) {
-                // --- 👇 *** 여기가 핵심 수정 사항입니다! *** 👇 ---
-                // '도서관'은 URL이 "BOARD"가 아니므로, openInAppBrowser가 호출됨
                 if (shortcut.url == "BOARD") {
                     val bundle = bundleOf("categoryName" to shortcut.name)
                     findNavController().navigate(R.id.action_home_to_notice_list, bundle)
                 } else {
                     openInAppBrowser(shortcut.url)
                 }
-                // ---------------------------------------------
             }
         }
         binding.recyclerviewHomeShortcuts.adapter = shortcutAdapter
@@ -197,7 +195,28 @@ class HomeMainFragment : Fragment() {
 
         popularAdapter = AdapterNotificationList(onItemClick = { notice -> openInAppBrowser(notice.url) }, onFavoriteClick = { notice -> updateFavoriteStatus(notice) })
         binding.recyclerviewHomePopular.adapter = popularAdapter
-        binding.recyclerviewHomePopular.layoutManager = LinearLayoutManager(context)
+        binding.recyclerviewHomePopular.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+        
+        snapHelper = PagerSnapHelper()
+        snapHelper?.attachToRecyclerView(binding.recyclerviewHomePopular)
+
+        binding.recyclerviewHomePopular.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    val layoutManager = recyclerView.layoutManager as? LinearLayoutManager
+                    snapHelper?.let { pagerSnapHelper ->
+                        val snapView = pagerSnapHelper.findSnapView(layoutManager)
+                        snapView?.let {
+                            val position = layoutManager?.getPosition(it)
+                            if (position != null && position != RecyclerView.NO_POSITION) {
+                                binding.tabLayoutPopularIndicator.getTabAt(position)?.select()
+                            }
+                        }
+                    }
+                }
+            }
+        })
 
         favoriteAdapter = AdapterNotificationList(onItemClick = { notice -> openInAppBrowser(notice.url) }, onFavoriteClick = { notice -> updateFavoriteStatus(notice) })
         binding.recyclerviewHomeFavorite.adapter = favoriteAdapter
@@ -426,7 +445,7 @@ class HomeMainFragment : Fragment() {
     }
 
     private fun fetchPopularPosts() {
-        db.collection("popular_notices").limit(1).get()
+        db.collection("popular_notices").limit(5).get()
             .addOnSuccessListener { documents ->
                 if (documents != null && !documents.isEmpty) {
                     val popularList = documents.mapNotNull { doc ->
@@ -442,13 +461,28 @@ class HomeMainFragment : Fragment() {
                     }
                     updateFavoritesStateForList(popularList) { updatedList ->
                         popularAdapter.submitList(updatedList)
+                        binding.tabLayoutPopularIndicator.removeAllTabs() // 기존 탭 제거
+                        if (updatedList.isNotEmpty()) {
+                            binding.tabLayoutPopularIndicator.visibility = View.VISIBLE
+                            updatedList.forEach { _ ->
+                                binding.tabLayoutPopularIndicator.addTab(binding.tabLayoutPopularIndicator.newTab())
+                            }
+                            // 스크롤 리스너에서 첫번째 아이템이 선택되도록 처리하므로 여기서는 별도 선택 안함
+                        } else {
+                            binding.tabLayoutPopularIndicator.visibility = View.GONE
+                        }
                     }
                 } else {
                     popularAdapter.submitList(emptyList())
+                    binding.tabLayoutPopularIndicator.visibility = View.GONE
+                    binding.tabLayoutPopularIndicator.removeAllTabs()
                 }
             }
             .addOnFailureListener { e ->
                 Toast.makeText(context, "추천 글 로드 실패: ${e.message}", Toast.LENGTH_LONG).show()
+                popularAdapter.submitList(emptyList())
+                binding.tabLayoutPopularIndicator.visibility = View.GONE
+                binding.tabLayoutPopularIndicator.removeAllTabs()
             }
     }
 
@@ -464,9 +498,9 @@ class HomeMainFragment : Fragment() {
                     val favoriteIds = document.get("favorites") as? List<String>
                     val validFavoriteIds = favoriteIds?.filter { it.isNotBlank() }
                     if (!validFavoriteIds.isNullOrEmpty()) {
-                        binding.recyclerviewHomeShortcuts.visibility = View.VISIBLE
+                        binding.recyclerviewHomeShortcuts.visibility = View.VISIBLE // 이 부분은 shortcut 리사이클러뷰인데, 오타일까요? 아니면 의도된 동작일까요?
                         binding.textviewHomeFavoriteEmpty.visibility = View.GONE
-                        val recentFavoriteIds = validFavoriteIds.reversed().take(1)
+                        val recentFavoriteIds = validFavoriteIds.reversed().take(1) // 최근 1개만 표시
                         if (recentFavoriteIds.isNotEmpty()) {
                             db.collection("notices").whereIn(com.google.firebase.firestore.FieldPath.documentId(), recentFavoriteIds).get()
                                 .addOnSuccessListener { noticeDocuments ->
@@ -481,7 +515,7 @@ class HomeMainFragment : Fragment() {
                                                 url = doc.getString("url") ?: "",
                                                 viewCount = (doc.getLong("viewCount") ?: 0L).toInt()
                                             )
-                                            notice.isFavorite = true
+                                            notice.isFavorite = true // 즐겨찾기 목록에서 가져왔으므로 true로 설정
                                             notice
                                         }
                                         favoriteAdapter.submitList(favoritePreviewList)
@@ -518,33 +552,37 @@ class HomeMainFragment : Fragment() {
     private fun updateFavoriteStatus(notice: DataNotificationItem) {
         val userId = auth.currentUser?.uid ?: return
         val userDocRef = db.collection("users").document(userId)
-        val noticeDocId = "${notice.category}_${notice.id}"
+        val noticeDocId = "${notice.category}_${notice.id}" // Firestore 문서 ID 형식에 맞게 수정
         val newFavoriteState = !notice.isFavorite
 
         val message = if (newFavoriteState) "즐겨찾기에 추가되었습니다." else "즐겨찾기에서 삭제되었습니다."
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 
+        // Popular 리스트의 아이템 상태 업데이트
         val popularList = popularAdapter.currentList.toMutableList()
         val popularIndex = popularList.indexOfFirst { it.id == notice.id && it.category == notice.category }
         if (popularIndex != -1) {
             popularList[popularIndex].isFavorite = newFavoriteState
-            popularAdapter.submitList(popularList.toList())
+            popularAdapter.submitList(popularList.toList()) // DiffUtil이 변경된 아이템만 업데이트
         }
 
-        fetchHomeFavorites()
+        // Favorite 리스트 업데이트 (현재 홈에서는 최근 1개만 보여주므로, 전체 즐겨찾기 화면에서 영향)
+        fetchHomeFavorites() // 즐겨찾기 데이터를 다시 로드하여 UI를 갱신
 
+        // Firestore 업데이트
         val updateTask = if (newFavoriteState) {
             userDocRef.update("favorites", FieldValue.arrayUnion(noticeDocId))
         } else {
             userDocRef.update("favorites", FieldValue.arrayRemove(noticeDocId))
         }
         updateTask.addOnFailureListener {
+            // Firestore 업데이트 실패 시 UI 롤백
             Toast.makeText(context, "즐겨찾기 상태 변경 실패 (DB)", Toast.LENGTH_SHORT).show()
-            fetchHomeFavorites()
+            fetchHomeFavorites() // 즐겨찾기 데이터를 다시 로드 (롤백된 상태 반영)
             val currentPopular = popularAdapter.currentList.toMutableList()
             val pIndex = currentPopular.indexOfFirst { it.id == notice.id && it.category == notice.category }
             if (pIndex != -1) {
-                currentPopular[pIndex].isFavorite = !newFavoriteState
+                currentPopular[pIndex].isFavorite = !newFavoriteState // 원래 상태로 복원
                 popularAdapter.submitList(currentPopular.toList())
             }
         }
@@ -553,19 +591,20 @@ class HomeMainFragment : Fragment() {
     private fun updateFavoritesStateForList(list: List<DataNotificationItem>, onComplete: (List<DataNotificationItem>) -> Unit) {
         val userId = auth.currentUser?.uid
         if (userId == null) {
-            onComplete(list)
+            onComplete(list) // 사용자가 로그인하지 않은 경우, 즐겨찾기 상태 변경 없이 완료
             return
         }
         db.collection("users").document(userId).get().addOnSuccessListener { document ->
             if (document != null && document.exists()) {
                 val favoriteIds = document.get("favorites") as? List<String> ?: emptyList()
                 list.forEach { notice ->
-                    val noticeDocId = "${notice.category}_${notice.id}"
+                    val noticeDocId = "${notice.category}_${notice.id}" // Firestore 문서 ID 형식
                     notice.isFavorite = favoriteIds.contains(noticeDocId)
                 }
             }
             onComplete(list)
         }.addOnFailureListener {
+            // Firestore 조회 실패 시, 즐겨찾기 상태는 기본값(false)으로 두고 완료
             onComplete(list)
         }
     }
@@ -581,6 +620,8 @@ class HomeMainFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        snapHelper?.attachToRecyclerView(null) // 리소스 정리
+        snapHelper = null
         _binding = null
     }
 }

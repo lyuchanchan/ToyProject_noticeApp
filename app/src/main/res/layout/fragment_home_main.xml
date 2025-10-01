@@ -254,8 +254,26 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:nestedScrollingEnabled="false"
-                        tools:itemCount="1"
+                        android:orientation="horizontal"
+                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                        tools:itemCount="5"
                         tools:listitem="@layout/item_notification_list" />
+
+                    <com.google.android.material.tabs.TabLayout
+                        android:id="@+id/tab_layout_popular_indicator"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="2dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@android:color/transparent"
+                        app:tabBackground="@drawable/tab_selector"
+                        app:tabIndicatorHeight="0dp"
+                        app:tabMode="scrollable"
+                        app:tabGravity="center"
+                        app:tabPaddingStart="0dp"
+                        app:tabPaddingEnd="0dp"
+                        app:tabPaddingTop="0dp"
+                        app:tabPaddingBottom="0dp"/>
 
                     <View
                         android:layout_width="match_parent"
