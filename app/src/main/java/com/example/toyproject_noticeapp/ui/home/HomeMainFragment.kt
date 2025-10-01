@@ -1,3 +1,4 @@
+
 package com.example.toyproject_noticeapp.ui.home
 
 import android.content.Context
@@ -5,6 +6,8 @@ import android.graphics.Color
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler // Added for auto-scroll
+import android.os.Looper  // Added for auto-scroll
 // import android.util.Log // Logcat을 위해 필요할 수 있으나, Gemini 환경에서는 print 사용
 import android.view.LayoutInflater
 import android.view.View
@@ -39,7 +42,6 @@ fun Int.dpToPx(context: Context): Int {
 class HomeMainFragment : Fragment() {
     private var _binding: FragmentHomeMainBinding? = null
     private val binding get() = _binding!!
-
     private lateinit var favoriteAdapter: AdapterNotificationList
     private lateinit var popularAdapter: AdapterNotificationList
     private lateinit var shortcutAdapter: HomeShortcutAdapter
@@ -53,6 +55,13 @@ class HomeMainFragment : Fragment() {
     private var hiddenItemTouchHelper: ItemTouchHelper? = null
     private lateinit var commonItemTouchCallback: ItemTouchHelper.SimpleCallback
     private var snapHelper: PagerSnapHelper? = null // PagerSnapHelper 멤버 변수로 선언
+
+    // Properties for auto-scrolling popular items
+    private val autoScrollHandler = Handler(Looper.getMainLooper())
+    private lateinit var autoScrollRunnable: Runnable
+    private val AUTO_SCROLL_DELAY = 2000L // 2 seconds (Changed from 5000L)
+    private var currentPopularPosition = 0 // Keeps track of the currently displayed popular item
+
 
     private val masterShortcutList by lazy {
         listOf(
@@ -95,7 +104,18 @@ class HomeMainFragment : Fragment() {
         setupClickListeners()
         setupRecyclerViews()
         setupItemTouchHelpers()
+        initializeAutoScroller() // Initialize the scroller
         fetchData()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        startAutoScroll() // Start auto-scroll when fragment is resumed
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopAutoScroll() // Stop auto-scroll when fragment is paused
     }
 
     private fun loadShortcutPreferences() {
@@ -211,9 +231,16 @@ class HomeMainFragment : Fragment() {
                             val position = layoutManager?.getPosition(it)
                             if (position != null && position != RecyclerView.NO_POSITION) {
                                 binding.tabLayoutPopularIndicator.getTabAt(position)?.select()
+                                currentPopularPosition = position // Update current position
+                                // If the scroll was likely user-initiated, reset the timer.
+                                // This will also be called after a programmatic scroll, effectively scheduling the next one.
+                                startAutoScroll()
                             }
                         }
                     }
+                } else if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
+                    // User is dragging, stop auto scroll temporarily
+                    stopAutoScroll()
                 }
             }
         })
@@ -310,9 +337,9 @@ class HomeMainFragment : Fragment() {
                             }
 
                             if (fromAdapter != null && targetAdapter != null && fromAdapter != targetAdapter) {
-                                val currentPosition = dragInProgressViewHolder?.adapterPosition ?: originalDragPosition
-                                if (currentPosition >= 0 && currentPosition < fromAdapter.itemCount) {
-                                    val itemAtOriginalPos = fromAdapter.items.getOrNull(currentPosition)
+                                val currentPositionInDrag = dragInProgressViewHolder?.adapterPosition ?: originalDragPosition
+                                if (currentPositionInDrag >= 0 && currentPositionInDrag < fromAdapter.itemCount) {
+                                    val itemAtOriginalPos = fromAdapter.items.getOrNull(currentPositionInDrag)
 
                                     val areItemsLogicallyEqual = if (itemAtOriginalPos != null && draggedItemData != null) {
                                         itemAtOriginalPos.name == draggedItemData!!.name &&
@@ -323,7 +350,7 @@ class HomeMainFragment : Fragment() {
                                     }
 
                                     if (areItemsLogicallyEqual) {
-                                        fromAdapter.removeItem(currentPosition)
+                                        fromAdapter.removeItem(currentPositionInDrag)
                                         targetAdapter.addItem(draggedItemData!!)
 
                                         fromAdapter.notifyDataSetChanged()
@@ -335,7 +362,7 @@ class HomeMainFragment : Fragment() {
                                             드롭 오류: 아이템 불일치 (명시적 비교 후)
                                             draggedItemData: name='${draggedItemData?.name}', url='${draggedItemData?.url}', iconResId=${draggedItemData?.iconResId} (Instance: ${System.identityHashCode(draggedItemData)})
                                             itemAtOriginalPos: name='${itemAtOriginalPos?.name}', url='${itemAtOriginalPos?.url}', iconResId=${itemAtOriginalPos?.iconResId} (Instance: ${System.identityHashCode(itemAtOriginalPos)})
-                                            originalDragPosition: $originalDragPosition
+                                            originalDragPosition: $originalDragPosition, currentPositionInDrag: $currentPositionInDrag
                                             fromAdapter.itemCount: ${fromAdapter.itemCount}
                                         """.trimIndent()
                                         print("########## DRAG DROP DEBUG - EXPLICIT ITEM MISMATCH ##########")
@@ -346,7 +373,7 @@ class HomeMainFragment : Fragment() {
                                     }
                                 } else {
                                     val logMessage = """
-                                        드롭 오류: 원래 위치가 잘못됨 ($originalDragPosition)
+                                        드롭 오류: 원래 위치가 잘못됨 ($originalDragPosition, currentPositionInDrag: $currentPositionInDrag)
                                         draggedItemData: name='${draggedItemData?.name}', url='${draggedItemData?.url}', iconResId=${draggedItemData?.iconResId}
                                         fromAdapter.itemCount: ${fromAdapter?.itemCount}
                                     """.trimIndent()
@@ -467,15 +494,22 @@ class HomeMainFragment : Fragment() {
                             updatedList.forEach { _ ->
                                 binding.tabLayoutPopularIndicator.addTab(binding.tabLayoutPopularIndicator.newTab())
                             }
-                            // 스크롤 리스너에서 첫번째 아이템이 선택되도록 처리하므로 여기서는 별도 선택 안함
+                            // Select the first tab initially, if not already handled by a listener
+                            if (binding.tabLayoutPopularIndicator.selectedTabPosition == -1 || binding.tabLayoutPopularIndicator.selectedTabPosition >= updatedList.size) {
+                                 binding.tabLayoutPopularIndicator.getTabAt(0)?.select()
+                            }
+                            currentPopularPosition = 0 // Reset position
+                            startAutoScroll() // Start auto-scroll
                         } else {
                             binding.tabLayoutPopularIndicator.visibility = View.GONE
+                            stopAutoScroll() // Stop if list is empty
                         }
                     }
                 } else {
                     popularAdapter.submitList(emptyList())
                     binding.tabLayoutPopularIndicator.visibility = View.GONE
                     binding.tabLayoutPopularIndicator.removeAllTabs()
+                    stopAutoScroll() // Stop if no data
                 }
             }
             .addOnFailureListener { e ->
@@ -483,6 +517,7 @@ class HomeMainFragment : Fragment() {
                 popularAdapter.submitList(emptyList())
                 binding.tabLayoutPopularIndicator.visibility = View.GONE
                 binding.tabLayoutPopularIndicator.removeAllTabs()
+                stopAutoScroll() // Stop on failure
             }
     }
 
@@ -498,7 +533,8 @@ class HomeMainFragment : Fragment() {
                     val favoriteIds = document.get("favorites") as? List<String>
                     val validFavoriteIds = favoriteIds?.filter { it.isNotBlank() }
                     if (!validFavoriteIds.isNullOrEmpty()) {
-                        binding.recyclerviewHomeShortcuts.visibility = View.VISIBLE // 이 부분은 shortcut 리사이클러뷰인데, 오타일까요? 아니면 의도된 동작일까요?
+                        // Corrected: Changed binding.recyclerviewHomeShortcuts.visibility to binding.recyclerviewHomeFavorite.visibility
+                        binding.recyclerviewHomeFavorite.visibility = View.VISIBLE 
                         binding.textviewHomeFavoriteEmpty.visibility = View.GONE
                         val recentFavoriteIds = validFavoriteIds.reversed().take(1) // 최근 1개만 표시
                         if (recentFavoriteIds.isNotEmpty()) {
@@ -618,8 +654,39 @@ class HomeMainFragment : Fragment() {
         }
     }
 
+    private fun initializeAutoScroller() {
+        autoScrollRunnable = Runnable {
+            val popularItemsCount = popularAdapter.itemCount
+            if (popularItemsCount > 0) {
+                currentPopularPosition = (currentPopularPosition + 1) % popularItemsCount
+                binding.recyclerviewHomePopular.smoothScrollToPosition(currentPopularPosition)
+                // The onScrollStateChanged listener (RecyclerView.SCROLL_STATE_IDLE)
+                // will handle selecting the tab and restarting the timer.
+                autoScrollHandler.postDelayed(this.autoScrollRunnable, AUTO_SCROLL_DELAY)
+            }
+        }
+    }
+
+    private fun startAutoScroll() {
+        // Ensure runnable is initialized
+        if (!this::autoScrollRunnable.isInitialized) {
+            initializeAutoScroller()
+        }
+        stopAutoScroll() // Stop any existing scrolls before starting a new one
+        if (popularAdapter.itemCount > 0) { // Only start if there are items
+            autoScrollHandler.postDelayed(autoScrollRunnable, AUTO_SCROLL_DELAY)
+        }
+    }
+
+    private fun stopAutoScroll() {
+        if (this::autoScrollRunnable.isInitialized) {
+            autoScrollHandler.removeCallbacks(autoScrollRunnable)
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
+        stopAutoScroll() // Ensure to stop handler to prevent leaks
         snapHelper?.attachToRecyclerView(null) // 리소스 정리
         snapHelper = null
         _binding = null

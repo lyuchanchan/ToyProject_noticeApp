@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
     <shape xmlns:android="http://schemas.android.com/apk/res/android"
-        android:shape="oval">
+        android:shape="rectangle"> <!-- oval에서 rectangle로 변경 -->
         <solid android:color="#FF696969"/> <!-- 진한 회색 (DimGray) -->
-        <size android:width="2dp" android:height="2dp"/> <!-- 크기 2dp로 변경 -->
+        <size android:width="1dp" android:height="1dp"/> <!-- 크기는 1dp 유지 -->
     </shape>
