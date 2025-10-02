@@ -83,15 +83,59 @@ class HomeMainFragment : Fragment() {
     private var hiddenShortcutsData: MutableList<Shortcut> = mutableListOf()
 
     private val randomMessages = listOf(
-        "오늘도 놓치지 말고 체크✔️", "캠퍼스 소식, 여기 다 있지", "공지 찾기? 이제 고생 끝🙌", "개쩌는 3인방이 만든 앱😎"
-    )
+        "오늘도 놓치지 말고 체크✔️",
+        "캠퍼스 소식, 여기 다 있지",
+        "공지 찾기? 이제 고생 끝🙌",
+        "한신대 소식, 다 모였다🙌",
+        "공지는 한신 나우!",
+        "한신 나우 = 올인원 패키지",
+        "오늘도 소식 체크 완료",
+        "공지부터 이벤트까지⚡",
+        "한눈에 보는 캠퍼스 라이프!",
+        "오늘도 신선한 소식 배달왔습니다📦",
+        "소식은 빠르게, 학교 생활은 여유롭게✨",
+        "공지 확인은 쉽게, 스트레스는 노노",
+        "공지? 난 다 모아봤어😉",
+        "놓치면 땅치고 후회할 소식들🔥",
+        "캠퍼스 소식, 빠르게 확인!",
+        "여기만 보면 학사 인싸🧑‍🎓",
+        "공지 놓쳤다고? 그건 전설일 뿐…",
+        "모든 소식을 한눈에, 한신 나우!",
+        "학교생활을 더 똑똑하게",
+        "하루를 바꾸는 작은 알림, 한신 나우!",
+        "편리하게 모은 한신대 소식",
+        "오늘의 공지, 지금 확인하세요",
+        "공지 찾는 게 귀찮아? 여기 다 있어~",
+        "학교 소식, 이제 헤매지 말고 직진👉",
+        "놓치면 ‘나만 몰랐어?’ 소리 듣는다😂",
+        "캠퍼스 인싸의 비밀: 공지 먼저 보기",
+        "공지 덕후 모드 ON!",
+        "교수님 말보다 빠른 공지 업데이트⚡",
+        "시험 공지부터 동아리 소식까지 올인원📚",
+        "중요한 건 공지 속에 다 있다😉",
+        "캠퍼스 치트키, 여기 맞습니다🎯",
+        "공지? 나우면 해결이지👌",
+        "공지 놓치면 F각… 그건 막아야지✋",
+        "또 나만 뒤늦게 알게 되는 건 이제 끝",
+        "한신대 공식 스포일러📢",
+        "공지 확인, 밥 먹듯이 하자🍚",
+        "공지 싹 모아봤다🙌",
+        "학교 소식 한 방 정리💡",
+        "공지 맛집 오픈🍽️",
+        "모든 공지, 원샷 원킬⚡",
+        "공지 = 한신 나우",
+        "입벌려, 공지사항 들어간다",
+        "떠먹여주는 학교소식",
+        "식단표도 한신 나우!",
+        "개쩌는 3인방이 만든 앱😎"
+        )
 
     companion object {
         private const val PREFS_NAME = "HomeShortcutPrefs"
         private const val KEY_VISIBLE_SHORTCUTS = "visible_shortcuts"
         private const val KEY_HIDDEN_SHORTCUTS = "hidden_shortcuts"
         private const val MIN_TARGET_HEIGHT_DP = 60
-        private const val SCROLL_SPEED_MILLISECONDS_PER_INCH = 100f // Slower scroll speed
+        private const val SCROLL_SPEED_MILLISECONDS_PER_INCH = 150f // Slower scroll speed
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
