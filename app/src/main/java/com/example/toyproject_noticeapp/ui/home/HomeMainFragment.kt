@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler // Added for auto-scroll
 import android.os.Looper  // Added for auto-scroll
+import android.util.DisplayMetrics // Added for custom scroll speed
 // import android.util.Log // Logcat을 위해 필요할 수 있으나, Gemini 환경에서는 print 사용
 import android.view.LayoutInflater
 import android.view.View
@@ -20,6 +21,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.LinearSmoothScroller // Added for custom scroll speed
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.example.toyproject_noticeapp.R
@@ -59,7 +61,7 @@ class HomeMainFragment : Fragment() {
     // Properties for auto-scrolling popular items
     private val autoScrollHandler = Handler(Looper.getMainLooper())
     private lateinit var autoScrollRunnable: Runnable
-    private val AUTO_SCROLL_DELAY = 2000L // 2 seconds (Changed from 5000L)
+    private val AUTO_SCROLL_DELAY = 3000L // Changed to 3 seconds
     private var currentPopularPosition = 0 // Keeps track of the currently displayed popular item
 
 
@@ -90,6 +92,7 @@ class HomeMainFragment : Fragment() {
         private const val KEY_VISIBLE_SHORTCUTS = "visible_shortcuts"
         private const val KEY_HIDDEN_SHORTCUTS = "hidden_shortcuts"
         private const val MIN_TARGET_HEIGHT_DP = 60
+        private const val SCROLL_SPEED_MILLISECONDS_PER_INCH = 100f // Slower scroll speed
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -659,10 +662,18 @@ class HomeMainFragment : Fragment() {
             val popularItemsCount = popularAdapter.itemCount
             if (popularItemsCount > 0) {
                 currentPopularPosition = (currentPopularPosition + 1) % popularItemsCount
-                binding.recyclerviewHomePopular.smoothScrollToPosition(currentPopularPosition)
-                // The onScrollStateChanged listener (RecyclerView.SCROLL_STATE_IDLE)
-                // will handle selecting the tab and restarting the timer.
-                autoScrollHandler.postDelayed(this.autoScrollRunnable, AUTO_SCROLL_DELAY)
+                
+                val layoutManager = binding.recyclerviewHomePopular.layoutManager as? LinearLayoutManager
+                layoutManager?.let {
+                    val smoothScroller = object : LinearSmoothScroller(requireContext()) { 
+                        override fun calculateSpeedPerPixel(displayMetrics: DisplayMetrics): Float {
+                            return SCROLL_SPEED_MILLISECONDS_PER_INCH / displayMetrics.densityDpi
+                        }
+                    }
+                    smoothScroller.targetPosition = currentPopularPosition
+                    it.startSmoothScroll(smoothScroller)
+                }
+                // Removed: autoScrollHandler.postDelayed(this.autoScrollRunnable, AUTO_SCROLL_DELAY)
             }
         }
     }
