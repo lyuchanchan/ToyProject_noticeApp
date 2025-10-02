@@ -266,6 +266,23 @@ class HomeMainFragment : Fragment() {
         snapHelper = PagerSnapHelper()
         snapHelper?.attachToRecyclerView(binding.recyclerviewHomePopular)
 
+        // ▼▼▼▼▼ [수정] 인디케이터 클릭 비활성화 ▼▼▼▼▼
+        binding.tabLayoutPopularIndicator.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                // 아무 동작도 하지 않음
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab?) {
+                // 아무 동작도 하지 않음
+            }
+
+            override fun onTabReselected(tab: TabLayout.Tab?) {
+                // 아무 동작도 하지 않음
+            }
+        })
+        // ▲▲▲▲▲ [수정] 인디케이터 클릭 비활성화 ▲▲▲▲▲
+
+
         binding.recyclerviewHomePopular.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 super.onScrollStateChanged(recyclerView, newState)
@@ -540,6 +557,16 @@ class HomeMainFragment : Fragment() {
                             updatedList.forEach { _ ->
                                 binding.tabLayoutPopularIndicator.addTab(binding.tabLayoutPopularIndicator.newTab())
                             }
+
+                            // ▼▼▼▼▼ [수정] 인디케이터 클릭 이벤트 비활성화 ▼▼▼▼▼
+                            val tabStrip = binding.tabLayoutPopularIndicator.getChildAt(0) as ViewGroup
+                            for (i in 0 until tabStrip.childCount) {
+                                tabStrip.getChildAt(i).setOnTouchListener { v, event -> true }
+                            }
+                            // ▲▲▲▲▲ [수정] 인디케이터 클릭 이벤트 비활성화 ▲▲▲▲▲
+
+
+
                             // Select the first tab initially, if not already handled by a listener
                             if (binding.tabLayoutPopularIndicator.selectedTabPosition == -1 || binding.tabLayoutPopularIndicator.selectedTabPosition >= updatedList.size) {
                                  binding.tabLayoutPopularIndicator.getTabAt(0)?.select()
