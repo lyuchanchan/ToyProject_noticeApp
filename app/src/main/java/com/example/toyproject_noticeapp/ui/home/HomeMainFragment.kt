@@ -297,22 +297,22 @@ class HomeMainFragment : Fragment() {
 
     private fun setupItemTouchHelpers() {
         commonItemTouchCallback = object : ItemTouchHelper.SimpleCallback(
-            ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT, 0
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT,
+            0 // No swipe actions
         ) {
-            private var dragInProgressViewHolder: RecyclerView.ViewHolder? = null
-            private var dragInProgressSourceRecyclerView: RecyclerView? = null
-            private var isOverTargetForDrop: Boolean = false
-            private var draggedItemData: Shortcut? = null
-            private var originalDragPosition: Int = RecyclerView.NO_POSITION
+            private var sourceAdapter: HomeShortcutAdapter? = null
+            private var draggedItem: Shortcut? = null
+            private var fromPosition: Int = -1
+            private var isOverTargetForDrop = false
 
             override fun onMove(
                 recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder
             ): Boolean {
-                val adapter = recyclerView.adapter as? HomeShortcutAdapter ?: return false
-                val fromPosition = viewHolder.adapterPosition
-                val toPosition = target.adapterPosition
-                if (fromPosition != RecyclerView.NO_POSITION && toPosition != RecyclerView.NO_POSITION) {
-                    adapter.moveItem(fromPosition, toPosition)
+                val adapter = recyclerView.adapter as HomeShortcutAdapter
+                val fromPos = viewHolder.adapterPosition
+                val toPos = target.adapterPosition
+                if (fromPos != RecyclerView.NO_POSITION && toPos != RecyclerView.NO_POSITION) {
+                    adapter.moveItem(fromPos, toPos)
                 }
                 return true
             }
@@ -323,82 +323,16 @@ class HomeMainFragment : Fragment() {
 
             override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
                 super.onSelectedChanged(viewHolder, actionState)
-                when (actionState) {
-                    ItemTouchHelper.ACTION_STATE_DRAG -> {
-                        if (viewHolder != null && isEditMode) {
-                            viewHolder.itemView.alpha = 0.7f
-                            viewHolder.itemView.elevation = 16f
-                            viewHolder.itemView.animate().scaleX(1.1f).scaleY(1.1f).setDuration(100).start()
-
-                            dragInProgressViewHolder = viewHolder
-                            dragInProgressSourceRecyclerView = viewHolder.itemView.parent as? RecyclerView
-                            binding.nestedScrollView.requestDisallowInterceptTouchEvent(true)
-                            isOverTargetForDrop = false
-                            originalDragPosition = viewHolder.adapterPosition
-
-                            when (dragInProgressSourceRecyclerView?.id) {
-                                binding.recyclerviewHomeShortcuts.id -> {
-                                    binding.recyclerviewHomeShortcuts.elevation = 20f
-                                    binding.recyclerviewHiddenShortcuts.elevation = 10f
-                                }
-                                binding.recyclerviewHiddenShortcuts.id -> {
-                                    binding.recyclerviewHiddenShortcuts.elevation = 20f
-                                    binding.recyclerviewHomeShortcuts.elevation = 10f
-                                }
-                            }
-
-                            if (originalDragPosition != RecyclerView.NO_POSITION && dragInProgressSourceRecyclerView != null) {
-                                val sourceAdapterCurrent = when (dragInProgressSourceRecyclerView?.id) {
-                                    binding.recyclerviewHomeShortcuts.id -> shortcutAdapter
-                                    binding.recyclerviewHiddenShortcuts.id -> hiddenShortcutAdapter
-                                    else -> null
-                                }
-                                draggedItemData = sourceAdapterCurrent?.items?.getOrNull(originalDragPosition)
-                            } else {
-                                draggedItemData = null
-                            }
-                            if (draggedItemData == null && originalDragPosition != RecyclerView.NO_POSITION) {
-                                Toast.makeText(requireContext(), "드래그 시작 오류: 아이템 데이터 못찾음", Toast.LENGTH_SHORT).show()
-                            }
-                        }
+                if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
+                    if (viewHolder == null) return
+                    sourceAdapter = (viewHolder.itemView.parent as RecyclerView).adapter as? HomeShortcutAdapter
+                    fromPosition = viewHolder.adapterPosition
+                    if (fromPosition != RecyclerView.NO_POSITION) {
+                        draggedItem = sourceAdapter?.items?.getOrNull(fromPosition)
                     }
-                    ItemTouchHelper.ACTION_STATE_IDLE -> {
-                        binding.nestedScrollView.requestDisallowInterceptTouchEvent(false)
-                        dragInProgressViewHolder?.itemView?.alpha = 1.0f
-
-                        if (isOverTargetForDrop && draggedItemData != null && dragInProgressSourceRecyclerView != null && originalDragPosition != RecyclerView.NO_POSITION) {
-                            val (fromAdapter, targetAdapter) = when (dragInProgressSourceRecyclerView?.id) {
-                                binding.recyclerviewHomeShortcuts.id -> shortcutAdapter to hiddenShortcutAdapter
-                                binding.recyclerviewHiddenShortcuts.id -> hiddenShortcutAdapter to shortcutAdapter
-                                else -> null to null
-                            }
-
-                            if (fromAdapter != null && targetAdapter != null) {
-                                val currentPositionInDrag = dragInProgressViewHolder?.adapterPosition ?: originalDragPosition
-                                if (currentPositionInDrag in 0 until fromAdapter.itemCount) {
-                                    val itemAtOriginalPos = fromAdapter.items.getOrNull(currentPositionInDrag)
-
-                                    if (itemAtOriginalPos == draggedItemData) {
-                                        fromAdapter.removeItem(currentPositionInDrag)
-                                        targetAdapter.addItem(draggedItemData!!)
-
-                                        fromAdapter.notifyItemRemoved(currentPositionInDrag)
-                                        targetAdapter.notifyItemInserted(targetAdapter.itemCount - 1)
-
-                                        Toast.makeText(requireContext(), "'${draggedItemData!!.name}' 이동 완료", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            }
-                        }
-
-                        binding.recyclerviewHomeShortcuts.setBackgroundColor(Color.TRANSPARENT)
-                        binding.recyclerviewHiddenShortcuts.setBackgroundColor(Color.TRANSPARENT)
-                        dragInProgressViewHolder = null
-                        dragInProgressSourceRecyclerView = null
-                        draggedItemData = null
-                        originalDragPosition = RecyclerView.NO_POSITION
-                        isOverTargetForDrop = false
-                    }
+                    viewHolder.itemView.alpha = 0.7f
+                    viewHolder.itemView.elevation = 16f
+                    binding.nestedScrollView.requestDisallowInterceptTouchEvent(true)
                 }
             }
 
@@ -407,32 +341,27 @@ class HomeMainFragment : Fragment() {
                 dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean
             ) {
                 super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+
                 if (actionState == ItemTouchHelper.ACTION_STATE_DRAG && isCurrentlyActive) {
-                    val itemView = viewHolder.itemView
-                    val rvScreenLocation = IntArray(2)
-                    recyclerView.getLocationOnScreen(rvScreenLocation)
-
-                    val draggedItemScreenRect = Rect(
-                        (rvScreenLocation[0] + itemView.left + dX).toInt(),
-                        (rvScreenLocation[1] + itemView.top + dY).toInt(),
-                        (rvScreenLocation[0] + itemView.left + itemView.width + dX).toInt(),
-                        (rvScreenLocation[1] + itemView.top + itemView.height + dY).toInt()
-                    )
-
-                    val otherRecyclerView = if (recyclerView.id == binding.recyclerviewHomeShortcuts.id) {
+                    val targetRecyclerView = if (recyclerView.id == binding.recyclerviewHomeShortcuts.id) {
                         binding.recyclerviewHiddenShortcuts
                     } else {
                         binding.recyclerviewHomeShortcuts
                     }
-                    val otherRvRect = Rect()
-                    otherRecyclerView.getGlobalVisibleRect(otherRvRect)
 
-                    if (otherRecyclerView.isVisible && Rect.intersects(draggedItemScreenRect, otherRvRect)) {
-                        otherRecyclerView.setBackgroundColor("#E0E0E0".toColorInt())
-                        isOverTargetForDrop = true
+                    val targetRect = Rect()
+                    targetRecyclerView.getGlobalVisibleRect(targetRect)
+
+                    val viewRect = Rect()
+                    viewHolder.itemView.getGlobalVisibleRect(viewRect)
+                    viewRect.offset(dX.toInt(), dY.toInt())
+
+                    isOverTargetForDrop = Rect.intersects(targetRect, viewRect) && targetRecyclerView.isVisible
+
+                    if (isOverTargetForDrop) {
+                        targetRecyclerView.setBackgroundColor("#E0E0E0".toColorInt())
                     } else {
-                        otherRecyclerView.setBackgroundColor(Color.TRANSPARENT)
-                        isOverTargetForDrop = false
+                        targetRecyclerView.setBackgroundColor(Color.TRANSPARENT)
                     }
                 }
             }
@@ -441,15 +370,35 @@ class HomeMainFragment : Fragment() {
                 super.clearView(recyclerView, viewHolder)
                 viewHolder.itemView.alpha = 1.0f
                 viewHolder.itemView.elevation = 0f
-                viewHolder.itemView.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start()
+                binding.nestedScrollView.requestDisallowInterceptTouchEvent(false)
+
+                if (isOverTargetForDrop && sourceAdapter != null && draggedItem != null && fromPosition != -1) {
+                    val targetRecyclerView = if (recyclerView.id == binding.recyclerviewHomeShortcuts.id) {
+                        binding.recyclerviewHiddenShortcuts
+                    } else {
+                        binding.recyclerviewHomeShortcuts
+                    }
+                    val targetAdapter = targetRecyclerView.adapter as HomeShortcutAdapter
+
+                    if (sourceAdapter != targetAdapter) {
+                        sourceAdapter?.removeItem(fromPosition)?.also { removedItem ->
+                            targetAdapter.addItem(removedItem)
+                            Toast.makeText(requireContext(), "'${removedItem.name}' 이동 완료", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
 
                 binding.recyclerviewHomeShortcuts.setBackgroundColor(Color.TRANSPARENT)
                 binding.recyclerviewHiddenShortcuts.setBackgroundColor(Color.TRANSPARENT)
 
-                binding.recyclerviewHomeShortcuts.elevation = 0f
-                binding.recyclerviewHiddenShortcuts.elevation = 0f
+                // Reset state
+                sourceAdapter = null
+                draggedItem = null
+                fromPosition = -1
+                isOverTargetForDrop = false
             }
         }
+
         visibleItemTouchHelper = ItemTouchHelper(commonItemTouchCallback)
         hiddenItemTouchHelper = ItemTouchHelper(commonItemTouchCallback)
     }
@@ -676,8 +625,7 @@ class HomeMainFragment : Fragment() {
     private fun setupAdvancedScrollAnimation() {
         binding.textviewRandomMessage.post {
             val maxTopMargin = 100.dpToPx(requireContext())
-            val collapsedToolbarHeight = 56.dpToPx(requireContext())
-            val minTopMargin = collapsedToolbarHeight - binding.textviewRandomMessage.height
+            val minTopMargin = 10.dpToPx(requireContext())
             val maxBottomMargin = 80.dpToPx(requireContext())
 
             offsetChangedListener = AppBarLayout.OnOffsetChangedListener { appBarLayout, verticalOffset ->
