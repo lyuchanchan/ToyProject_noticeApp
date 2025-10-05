@@ -1,110 +1,136 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.home.HomeMainFragment">
 
-    <ImageView
-        android:id="@+id/imageview_app_icon"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:contentDescription="App Icon"
-        android:src="@drawable/hanshin_logo"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/textview_app_title"
-        android:layout_width="wrap_content"
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/app_bar_layout"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:text="Hanshin Now!"
-        android:textColor="@color/black"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
-        app:layout_constraintStart_toEndOf="@id/imageview_app_icon"
-        app:layout_constraintTop_toTopOf="@id/imageview_app_icon" />
+        android:background="@android:color/transparent"
+        app:elevation="0dp">
 
-    <ImageView
-        android:id="@+id/imageview_search"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
-        android:layout_marginEnd="16dp"
-        android:contentDescription="Search Icon"
-        android:src="@drawable/ic_search"
-        app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
-        app:layout_constraintEnd_toStartOf="@+id/imageview_notifications"
-        app:layout_constraintTop_toTopOf="@id/imageview_app_icon"
-        app:tint="?android:attr/textColorPrimary" />
+        <com.google.android.material.appbar.CollapsingToolbarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_scrollFlags="scroll|enterAlways|snap">
 
-    <ImageView
-        android:id="@+id/imageview_notifications"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
-        android:layout_marginEnd="16dp"
-        android:contentDescription="Notifications Icon"
-        android:src="@drawable/ic_notifications"
-        app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
-        app:layout_constraintEnd_toStartOf="@+id/imageview_settings"
-        app:layout_constraintTop_toTopOf="@id/imageview_app_icon" />
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
 
-    <ImageView
-        android:id="@+id/imageview_settings"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
-        android:layout_marginEnd="16dp"
-        android:contentDescription="Settings Icon"
-        android:src="@drawable/ic_settings"
-        app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/imageview_app_icon"
-        app:tint="?android:attr/textColorPrimary" />
+                <ImageView
+                    android:id="@+id/imageview_app_icon"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="16dp"
+                    android:contentDescription="App Icon"
+                    android:src="@drawable/hanshin_logo"
+                    app:layout_constraintDimensionRatio="1:1"
+                    app:layout_constraintEnd_toStartOf="@+id/textview_app_title"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintWidth_percent="0.1" />
 
-    <TextView
-        android:id="@+id/textview_random_message"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="16dp"
-        android:gravity="center"
-        android:textColor="@color/text_primary"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/imageview_app_icon"
-        tools:text="오늘도 놓치지 말고 체크✔️" />
+                <TextView
+                    android:id="@+id/textview_app_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="Hanshin Now!"
+                    android:textColor="@color/black"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
+                    app:layout_constraintStart_toEndOf="@id/imageview_app_icon"
+                    app:layout_constraintTop_toTopOf="@id/imageview_app_icon" />
+
+                <ImageView
+                    android:id="@+id/imageview_search"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginEnd="16dp"
+                    android:contentDescription="Search Icon"
+                    android:src="@drawable/ic_search"
+                    app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
+                    app:layout_constraintEnd_toStartOf="@id/imageview_notifications"
+                    app:layout_constraintTop_toTopOf="@id/imageview_app_icon"
+                    app:tint="?android:attr/textColorPrimary" />
+
+                <ImageView
+                    android:id="@+id/imageview_notifications"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginEnd="16dp"
+                    android:contentDescription="Notifications Icon"
+                    android:src="@drawable/ic_notifications"
+                    app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
+                    app:layout_constraintEnd_toStartOf="@id/imageview_settings"
+                    app:layout_constraintTop_toTopOf="@id/imageview_app_icon" />
+
+                <ImageView
+                    android:id="@+id/imageview_settings"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginEnd="16dp"
+                    android:contentDescription="Settings Icon"
+                    android:src="@drawable/ic_settings"
+                    app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/imageview_app_icon"
+                    app:tint="?android:attr/textColorPrimary" />
+
+                <TextView
+                    android:id="@+id/textview_random_message"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="100dp"
+                    android:gravity="center"
+                    android:textColor="@color/text_primary"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/imageview_app_icon"
+                    tools:text="오늘도 놓치지 말고 체크✔️" />
+
+                <View
+                    android:id="@+id/anchor_view"
+                    android:layout_width="1dp"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="80dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/textview_random_message" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </com.google.android.material.appbar.CollapsingToolbarLayout>
+    </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/nested_scroll_view"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="16dp"
-        android:clipChildren="false"
-        android:clipToPadding="false"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textview_random_message">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="0dp"
+        android:fillViewport="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:clipChildren="false"
-            android:clipToPadding="false"
             android:orientation="vertical"
             android:padding="16dp">
 
+
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_shortcuts"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:clipChildren="false"
-                android:clipToPadding="false"
                 app:cardBackgroundColor="@color/stylish_purple"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp">
@@ -194,7 +220,6 @@
                         app:spanCount="3"
                         tools:itemCount="5"
                         tools:listitem="@layout/item_home_shortcut" />
-
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -255,17 +280,17 @@
                         android:id="@+id/tab_layout_popular_indicator"
                         android:layout_width="match_parent"
                         android:layout_height="2dp"
-                        android:minHeight="2dp"
                         android:layout_marginTop="8dp"
                         android:background="@android:color/transparent"
+                        android:minHeight="2dp"
                         app:tabBackground="@drawable/tab_selector"
+                        app:tabGravity="center"
                         app:tabIndicatorHeight="0dp"
                         app:tabMode="scrollable"
-                        app:tabGravity="center"
-                        app:tabPaddingStart="0dp"
+                        app:tabPaddingBottom="0dp"
                         app:tabPaddingEnd="0dp"
-                        app:tabPaddingTop="0dp"
-                        app:tabPaddingBottom="0dp"/>
+                        app:tabPaddingStart="0dp"
+                        app:tabPaddingTop="0dp" />
 
                     <View
                         android:layout_width="match_parent"
@@ -326,4 +351,4 @@
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-</androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -4,24 +4,26 @@ package com.example.toyproject_noticeapp.ui.home
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Rect
-import android.net.Uri
 import android.os.Bundle
-import android.os.Handler // Added for auto-scroll
-import android.os.Looper  // Added for auto-scroll
-import android.util.DisplayMetrics // Added for custom scroll speed
-// import android.util.Log // Logcat을 위해 필요할 수 있으나, Gemini 환경에서는 print 사용
+import android.os.Handler
+import android.os.Looper
+import android.util.DisplayMetrics
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.content.edit
+import androidx.core.graphics.toColorInt
+import androidx.core.net.toUri
 import androidx.core.os.bundleOf
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.LinearSmoothScroller // Added for custom scroll speed
+import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.example.toyproject_noticeapp.R
@@ -30,13 +32,14 @@ import com.example.toyproject_noticeapp.adapter.HomeShortcutAdapter
 import com.example.toyproject_noticeapp.data.DataNotificationItem
 import com.example.toyproject_noticeapp.data.Shortcut
 import com.example.toyproject_noticeapp.databinding.FragmentHomeMainBinding
+import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.tabs.TabLayout
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import kotlin.math.abs
 
-// Helper function for dp to px conversion
 fun Int.dpToPx(context: Context): Int {
     return (this * context.resources.displayMetrics.density).toInt()
 }
@@ -56,14 +59,14 @@ class HomeMainFragment : Fragment() {
     private var visibleItemTouchHelper: ItemTouchHelper? = null
     private var hiddenItemTouchHelper: ItemTouchHelper? = null
     private lateinit var commonItemTouchCallback: ItemTouchHelper.SimpleCallback
-    private var snapHelper: PagerSnapHelper? = null // PagerSnapHelper 멤버 변수로 선언
+    private var snapHelper: PagerSnapHelper? = null
 
-    // Properties for auto-scrolling popular items
     private val autoScrollHandler = Handler(Looper.getMainLooper())
     private lateinit var autoScrollRunnable: Runnable
-    private val AUTO_SCROLL_DELAY = 3000L // Changed to 3 seconds
-    private var currentPopularPosition = 0 // Keeps track of the currently displayed popular item
+    private val autoScrollDelay = 3000L
+    private var currentPopularPosition = 0
 
+    private var offsetChangedListener: AppBarLayout.OnOffsetChangedListener? = null
 
     private val masterShortcutList by lazy {
         listOf(
@@ -128,14 +131,14 @@ class HomeMainFragment : Fragment() {
         "떠먹여주는 학교소식",
         "식단표도 한신 나우!",
         "개쩌는 3인방이 만든 앱😎"
-        )
+    )
 
     companion object {
         private const val PREFS_NAME = "HomeShortcutPrefs"
         private const val KEY_VISIBLE_SHORTCUTS = "visible_shortcuts"
         private const val KEY_HIDDEN_SHORTCUTS = "hidden_shortcuts"
         private const val MIN_TARGET_HEIGHT_DP = 60
-        private const val SCROLL_SPEED_MILLISECONDS_PER_INCH = 150f // Slower scroll speed
+        private const val SCROLL_SPEED_MILLISECONDS_PER_INCH = 100f
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -150,18 +153,19 @@ class HomeMainFragment : Fragment() {
         setupClickListeners()
         setupRecyclerViews()
         setupItemTouchHelpers()
-        initializeAutoScroller() // Initialize the scroller
+        initializeAutoScroller()
         fetchData()
+        setupAdvancedScrollAnimation()
     }
 
     override fun onResume() {
         super.onResume()
-        startAutoScroll() // Start auto-scroll when fragment is resumed
+        startAutoScroll()
     }
 
     override fun onPause() {
         super.onPause()
-        stopAutoScroll() // Stop auto-scroll when fragment is paused
+        stopAutoScroll()
     }
 
     private fun loadShortcutPreferences() {
@@ -191,12 +195,12 @@ class HomeMainFragment : Fragment() {
 
     private fun saveShortcutPreferences() {
         val prefs = requireActivity().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val editor = prefs.edit()
-        val visibleNames = shortcutAdapter.items.map { it.name }.joinToString(",")
-        val hiddenNames = hiddenShortcutAdapter.items.map { it.name }.joinToString(",")
-        editor.putString(KEY_VISIBLE_SHORTCUTS, visibleNames)
-        editor.putString(KEY_HIDDEN_SHORTCUTS, hiddenNames)
-        editor.apply()
+        prefs.edit {
+            val visibleNames = shortcutAdapter.items.joinToString(",") { it.name }
+            val hiddenNames = hiddenShortcutAdapter.items.joinToString(",") { it.name }
+            putString(KEY_VISIBLE_SHORTCUTS, visibleNames)
+            putString(KEY_HIDDEN_SHORTCUTS, hiddenNames)
+        }
     }
 
     private fun setupClickListeners() {
@@ -209,35 +213,27 @@ class HomeMainFragment : Fragment() {
 
     private fun toggleEditMode() {
         isEditMode = !isEditMode
-        if (isEditMode) {
-            binding.textviewHomeShortcutEdit.text = "완료"
-            binding.dividerHiddenShortcuts.visibility = View.VISIBLE
-            binding.textviewHiddenShortcutsTitle.visibility = View.VISIBLE
-            binding.recyclerviewHiddenShortcuts.visibility = View.VISIBLE
+        binding.textviewHomeShortcutEdit.text = if (isEditMode) "완료" else "편집"
+        binding.dividerHiddenShortcuts.isVisible = isEditMode
+        binding.textviewHiddenShortcutsTitle.isVisible = isEditMode
+        binding.recyclerviewHiddenShortcuts.isVisible = isEditMode
 
+        if (isEditMode) {
             val minHeightPx = MIN_TARGET_HEIGHT_DP.dpToPx(requireContext())
             binding.recyclerviewHomeShortcuts.minimumHeight = minHeightPx
             binding.recyclerviewHiddenShortcuts.minimumHeight = minHeightPx
-
             binding.recyclerviewHomeShortcuts.isNestedScrollingEnabled = false
             visibleItemTouchHelper?.attachToRecyclerView(binding.recyclerviewHomeShortcuts)
             hiddenItemTouchHelper?.attachToRecyclerView(binding.recyclerviewHiddenShortcuts)
         } else {
-            binding.textviewHomeShortcutEdit.text = "편집"
-            binding.dividerHiddenShortcuts.visibility = View.GONE
-            binding.textviewHiddenShortcutsTitle.visibility = View.GONE
-            binding.recyclerviewHiddenShortcuts.visibility = View.GONE
-
             binding.recyclerviewHomeShortcuts.minimumHeight = 0
             binding.recyclerviewHiddenShortcuts.minimumHeight = 0
-
             binding.recyclerviewHomeShortcuts.isNestedScrollingEnabled = true
             visibleItemTouchHelper?.attachToRecyclerView(null)
             hiddenItemTouchHelper?.attachToRecyclerView(null)
             saveShortcutPreferences()
-
-            shortcutAdapter.notifyDataSetChanged()
-            hiddenShortcutAdapter.notifyDataSetChanged()
+            shortcutAdapter.notifyItemRangeChanged(0, shortcutAdapter.itemCount)
+            hiddenShortcutAdapter.notifyItemRangeChanged(0, hiddenShortcutAdapter.itemCount)
         }
     }
 
@@ -253,35 +249,24 @@ class HomeMainFragment : Fragment() {
             }
         }
         binding.recyclerviewHomeShortcuts.adapter = shortcutAdapter
-        binding.recyclerviewHomeShortcuts.layoutManager = GridLayoutManager(context, 3)
+        binding.recyclerviewHomeShortcuts.layoutManager = GridLayoutManager(requireContext(), 3)
 
         hiddenShortcutAdapter = HomeShortcutAdapter(hiddenShortcutsData) {}
         binding.recyclerviewHiddenShortcuts.adapter = hiddenShortcutAdapter
-        binding.recyclerviewHiddenShortcuts.layoutManager = GridLayoutManager(context, 3)
+        binding.recyclerviewHiddenShortcuts.layoutManager = GridLayoutManager(requireContext(), 3)
 
         popularAdapter = AdapterNotificationList(onItemClick = { notice -> openInAppBrowser(notice.url) }, onFavoriteClick = { notice -> updateFavoriteStatus(notice) })
         binding.recyclerviewHomePopular.adapter = popularAdapter
-        binding.recyclerviewHomePopular.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+        binding.recyclerviewHomePopular.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         
         snapHelper = PagerSnapHelper()
         snapHelper?.attachToRecyclerView(binding.recyclerviewHomePopular)
 
-        // ▼▼▼▼▼ [수정] 인디케이터 클릭 비활성화 ▼▼▼▼▼
         binding.tabLayoutPopularIndicator.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab?) {
-                // 아무 동작도 하지 않음
-            }
-
-            override fun onTabUnselected(tab: TabLayout.Tab?) {
-                // 아무 동작도 하지 않음
-            }
-
-            override fun onTabReselected(tab: TabLayout.Tab?) {
-                // 아무 동작도 하지 않음
-            }
+            override fun onTabSelected(tab: TabLayout.Tab?) {}
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
-        // ▲▲▲▲▲ [수정] 인디케이터 클릭 비활성화 ▲▲▲▲▲
-
 
         binding.recyclerviewHomePopular.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
@@ -294,15 +279,12 @@ class HomeMainFragment : Fragment() {
                             val position = layoutManager?.getPosition(it)
                             if (position != null && position != RecyclerView.NO_POSITION) {
                                 binding.tabLayoutPopularIndicator.getTabAt(position)?.select()
-                                currentPopularPosition = position // Update current position
-                                // If the scroll was likely user-initiated, reset the timer.
-                                // This will also be called after a programmatic scroll, effectively scheduling the next one.
+                                currentPopularPosition = position
                                 startAutoScroll()
                             }
                         }
                     }
                 } else if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
-                    // User is dragging, stop auto scroll temporarily
                     stopAutoScroll()
                 }
             }
@@ -310,7 +292,7 @@ class HomeMainFragment : Fragment() {
 
         favoriteAdapter = AdapterNotificationList(onItemClick = { notice -> openInAppBrowser(notice.url) }, onFavoriteClick = { notice -> updateFavoriteStatus(notice) })
         binding.recyclerviewHomeFavorite.adapter = favoriteAdapter
-        binding.recyclerviewHomeFavorite.layoutManager = LinearLayoutManager(context)
+        binding.recyclerviewHomeFavorite.layoutManager = LinearLayoutManager(requireContext())
     }
 
     private fun setupItemTouchHelpers() {
@@ -354,28 +336,29 @@ class HomeMainFragment : Fragment() {
                             isOverTargetForDrop = false
                             originalDragPosition = viewHolder.adapterPosition
 
-                            if (dragInProgressSourceRecyclerView?.id == binding.recyclerviewHomeShortcuts.id) {
-                                binding.recyclerviewHomeShortcuts.elevation = 20f
-                                binding.recyclerviewHiddenShortcuts.elevation = 10f
-                            } else {
-                                binding.recyclerviewHiddenShortcuts.elevation = 20f
-                                binding.recyclerviewHomeShortcuts.elevation = 10f
+                            when (dragInProgressSourceRecyclerView?.id) {
+                                binding.recyclerviewHomeShortcuts.id -> {
+                                    binding.recyclerviewHomeShortcuts.elevation = 20f
+                                    binding.recyclerviewHiddenShortcuts.elevation = 10f
+                                }
+                                binding.recyclerviewHiddenShortcuts.id -> {
+                                    binding.recyclerviewHiddenShortcuts.elevation = 20f
+                                    binding.recyclerviewHomeShortcuts.elevation = 10f
+                                }
                             }
 
                             if (originalDragPosition != RecyclerView.NO_POSITION && dragInProgressSourceRecyclerView != null) {
-                                val sourceAdapterCurrent = if (dragInProgressSourceRecyclerView!!.id == binding.recyclerviewHomeShortcuts.id) {
-                                    shortcutAdapter
-                                } else if (dragInProgressSourceRecyclerView!!.id == binding.recyclerviewHiddenShortcuts.id) {
-                                    hiddenShortcutAdapter
-                                } else {
-                                    null
+                                val sourceAdapterCurrent = when (dragInProgressSourceRecyclerView?.id) {
+                                    binding.recyclerviewHomeShortcuts.id -> shortcutAdapter
+                                    binding.recyclerviewHiddenShortcuts.id -> hiddenShortcutAdapter
+                                    else -> null
                                 }
                                 draggedItemData = sourceAdapterCurrent?.items?.getOrNull(originalDragPosition)
                             } else {
                                 draggedItemData = null
                             }
                             if (draggedItemData == null && originalDragPosition != RecyclerView.NO_POSITION) {
-                                Toast.makeText(context, "드래그 시작 오류: 아이템 데이터 못찾음", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(requireContext(), "드래그 시작 오류: 아이템 데이터 못찾음", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
@@ -384,83 +367,28 @@ class HomeMainFragment : Fragment() {
                         dragInProgressViewHolder?.itemView?.alpha = 1.0f
 
                         if (isOverTargetForDrop && draggedItemData != null && dragInProgressSourceRecyclerView != null && originalDragPosition != RecyclerView.NO_POSITION) {
-                            val fromAdapter: HomeShortcutAdapter?
-                            val targetAdapter: HomeShortcutAdapter?
-
-                            if (dragInProgressSourceRecyclerView!!.id == binding.recyclerviewHomeShortcuts.id) {
-                                fromAdapter = shortcutAdapter
-                                targetAdapter = hiddenShortcutAdapter
-                            } else if (dragInProgressSourceRecyclerView!!.id == binding.recyclerviewHiddenShortcuts.id) {
-                                fromAdapter = hiddenShortcutAdapter
-                                targetAdapter = shortcutAdapter
-                            } else {
-                                Toast.makeText(context, "드롭 오류: 알 수 없는 시작 목록", Toast.LENGTH_SHORT).show()
-                                fromAdapter = null
-                                targetAdapter = null
+                            val (fromAdapter, targetAdapter) = when (dragInProgressSourceRecyclerView?.id) {
+                                binding.recyclerviewHomeShortcuts.id -> shortcutAdapter to hiddenShortcutAdapter
+                                binding.recyclerviewHiddenShortcuts.id -> hiddenShortcutAdapter to shortcutAdapter
+                                else -> null to null
                             }
 
-                            if (fromAdapter != null && targetAdapter != null && fromAdapter != targetAdapter) {
+                            if (fromAdapter != null && targetAdapter != null) {
                                 val currentPositionInDrag = dragInProgressViewHolder?.adapterPosition ?: originalDragPosition
-                                if (currentPositionInDrag >= 0 && currentPositionInDrag < fromAdapter.itemCount) {
+                                if (currentPositionInDrag in 0 until fromAdapter.itemCount) {
                                     val itemAtOriginalPos = fromAdapter.items.getOrNull(currentPositionInDrag)
 
-                                    val areItemsLogicallyEqual = if (itemAtOriginalPos != null && draggedItemData != null) {
-                                        itemAtOriginalPos.name == draggedItemData!!.name &&
-                                                itemAtOriginalPos.url == draggedItemData!!.url &&
-                                                itemAtOriginalPos.iconResId == draggedItemData!!.iconResId
-                                    } else {
-                                        itemAtOriginalPos == draggedItemData
-                                    }
-
-                                    if (areItemsLogicallyEqual) {
+                                    if (itemAtOriginalPos == draggedItemData) {
                                         fromAdapter.removeItem(currentPositionInDrag)
                                         targetAdapter.addItem(draggedItemData!!)
 
-                                        fromAdapter.notifyDataSetChanged()
-                                        targetAdapter.notifyDataSetChanged()
+                                        fromAdapter.notifyItemRemoved(currentPositionInDrag)
+                                        targetAdapter.notifyItemInserted(targetAdapter.itemCount - 1)
 
-                                        Toast.makeText(context, "'${draggedItemData!!.name}' 이동 완료", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        val logMessage = """
-                                            드롭 오류: 아이템 불일치 (명시적 비교 후)
-                                            draggedItemData: name='${draggedItemData?.name}', url='${draggedItemData?.url}', iconResId=${draggedItemData?.iconResId} (Instance: ${System.identityHashCode(draggedItemData)})
-                                            itemAtOriginalPos: name='${itemAtOriginalPos?.name}', url='${itemAtOriginalPos?.url}', iconResId=${itemAtOriginalPos?.iconResId} (Instance: ${System.identityHashCode(itemAtOriginalPos)})
-                                            originalDragPosition: $originalDragPosition, currentPositionInDrag: $currentPositionInDrag
-                                            fromAdapter.itemCount: ${fromAdapter.itemCount}
-                                        """.trimIndent()
-                                        print("########## DRAG DROP DEBUG - EXPLICIT ITEM MISMATCH ##########")
-                                        print(logMessage)
-                                        print("############################################################")
-                                        Toast.makeText(context, "드롭 오류: 아이템 불일치 (명시적 비교, 로그 확인)", Toast.LENGTH_LONG).show()
-                                        fromAdapter.notifyDataSetChanged()
+                                        Toast.makeText(requireContext(), "'${draggedItemData!!.name}' 이동 완료", Toast.LENGTH_SHORT).show()
                                     }
-                                } else {
-                                    val logMessage = """
-                                        드롭 오류: 원래 위치가 잘못됨 ($originalDragPosition, currentPositionInDrag: $currentPositionInDrag)
-                                        draggedItemData: name='${draggedItemData?.name}', url='${draggedItemData?.url}', iconResId=${draggedItemData?.iconResId}
-                                        fromAdapter.itemCount: ${fromAdapter?.itemCount}
-                                    """.trimIndent()
-                                    print("########## DRAG DROP DEBUG - INVALID POSITION ##########")
-                                    print(logMessage)
-                                    print("#######################################################")
-                                    Toast.makeText(context, "드롭 오류: 원래 위치가 잘못됨 (로그 확인)", Toast.LENGTH_SHORT).show()
-                                    fromAdapter?.notifyDataSetChanged()
                                 }
                             }
-                        } else if (isOverTargetForDrop) {
-                            val logMessage = """
-                                드롭 실패: 드롭 대상 위였으나, 주요 데이터 누락
-                                draggedItemData is null: ${draggedItemData == null}
-                                dragInProgressSourceRecyclerView is null: ${dragInProgressSourceRecyclerView == null}
-                                originalDragPosition: $originalDragPosition
-                            """.trimIndent()
-                            print("########## DRAG DROP DEBUG - DROP OVER TARGET, DATA MISSING ##########")
-                            print(logMessage)
-                            print("#####################################################################")
-                            if (draggedItemData == null) Toast.makeText(context, "드롭 실패: 드래그된 아이템 데이터 없음 (로그 확인)", Toast.LENGTH_SHORT).show()
-                            if (originalDragPosition == RecyclerView.NO_POSITION) Toast.makeText(context, "드롭 실패: 원래 위치 정보 없음 (로그 확인)", Toast.LENGTH_SHORT).show()
-                            val sourceAdapterToNotify = if (dragInProgressSourceRecyclerView?.id == binding.recyclerviewHomeShortcuts.id) shortcutAdapter else if (dragInProgressSourceRecyclerView?.id == binding.recyclerviewHiddenShortcuts.id) hiddenShortcutAdapter else null
-                            sourceAdapterToNotify?.notifyDataSetChanged()
                         }
 
                         binding.recyclerviewHomeShortcuts.setBackgroundColor(Color.TRANSPARENT)
@@ -499,11 +427,8 @@ class HomeMainFragment : Fragment() {
                     val otherRvRect = Rect()
                     otherRecyclerView.getGlobalVisibleRect(otherRvRect)
 
-                    if (otherRecyclerView.visibility == View.VISIBLE &&
-                        !otherRvRect.isEmpty &&
-                        !draggedItemScreenRect.isEmpty &&
-                        Rect.intersects(draggedItemScreenRect, otherRvRect)) {
-                        otherRecyclerView.setBackgroundColor(Color.parseColor("#E0E0E0"))
+                    if (otherRecyclerView.isVisible && Rect.intersects(draggedItemScreenRect, otherRvRect)) {
+                        otherRecyclerView.setBackgroundColor("#E0E0E0".toColorInt())
                         isOverTargetForDrop = true
                     } else {
                         otherRecyclerView.setBackgroundColor(Color.TRANSPARENT)
@@ -551,46 +476,35 @@ class HomeMainFragment : Fragment() {
                     }
                     updateFavoritesStateForList(popularList) { updatedList ->
                         popularAdapter.submitList(updatedList)
-                        binding.tabLayoutPopularIndicator.removeAllTabs() // 기존 탭 제거
+                        binding.tabLayoutPopularIndicator.removeAllTabs()
                         if (updatedList.isNotEmpty()) {
-                            binding.tabLayoutPopularIndicator.visibility = View.VISIBLE
+                            binding.tabLayoutPopularIndicator.isVisible = true
                             updatedList.forEach { _ ->
                                 binding.tabLayoutPopularIndicator.addTab(binding.tabLayoutPopularIndicator.newTab())
                             }
-
-                            // ▼▼▼▼▼ [수정] 인디케이터 클릭 이벤트 비활성화 ▼▼▼▼▼
-                            val tabStrip = binding.tabLayoutPopularIndicator.getChildAt(0) as ViewGroup
-                            for (i in 0 until tabStrip.childCount) {
-                                tabStrip.getChildAt(i).setOnTouchListener { v, event -> true }
-                            }
-                            // ▲▲▲▲▲ [수정] 인디케이터 클릭 이벤트 비활성화 ▲▲▲▲▲
-
-
-
-                            // Select the first tab initially, if not already handled by a listener
                             if (binding.tabLayoutPopularIndicator.selectedTabPosition == -1 || binding.tabLayoutPopularIndicator.selectedTabPosition >= updatedList.size) {
                                  binding.tabLayoutPopularIndicator.getTabAt(0)?.select()
                             }
-                            currentPopularPosition = 0 // Reset position
-                            startAutoScroll() // Start auto-scroll
+                            currentPopularPosition = 0
+                            startAutoScroll()
                         } else {
-                            binding.tabLayoutPopularIndicator.visibility = View.GONE
-                            stopAutoScroll() // Stop if list is empty
+                            binding.tabLayoutPopularIndicator.isVisible = false
+                            stopAutoScroll()
                         }
                     }
                 } else {
                     popularAdapter.submitList(emptyList())
-                    binding.tabLayoutPopularIndicator.visibility = View.GONE
+                    binding.tabLayoutPopularIndicator.isVisible = false
                     binding.tabLayoutPopularIndicator.removeAllTabs()
-                    stopAutoScroll() // Stop if no data
+                    stopAutoScroll()
                 }
             }
             .addOnFailureListener { e ->
-                Toast.makeText(context, "추천 글 로드 실패: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), "추천 글 로드 실패: ${e.message}", Toast.LENGTH_LONG).show()
                 popularAdapter.submitList(emptyList())
-                binding.tabLayoutPopularIndicator.visibility = View.GONE
+                binding.tabLayoutPopularIndicator.isVisible = false
                 binding.tabLayoutPopularIndicator.removeAllTabs()
-                stopAutoScroll() // Stop on failure
+                stopAutoScroll()
             }
     }
 
@@ -603,13 +517,12 @@ class HomeMainFragment : Fragment() {
         db.collection("users").document(userId).get()
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
+                    @Suppress("UNCHECKED_CAST")
                     val favoriteIds = document.get("favorites") as? List<String>
-                    val validFavoriteIds = favoriteIds?.filter { it.isNotBlank() }
-                    if (!validFavoriteIds.isNullOrEmpty()) {
-                        // Corrected: Changed binding.recyclerviewHomeShortcuts.visibility to binding.recyclerviewHomeFavorite.visibility
-                        binding.recyclerviewHomeFavorite.visibility = View.VISIBLE 
-                        binding.textviewHomeFavoriteEmpty.visibility = View.GONE
-                        val recentFavoriteIds = validFavoriteIds.reversed().take(1) // 최근 1개만 표시
+                    if (!favoriteIds.isNullOrEmpty()) {
+                        binding.recyclerviewHomeFavorite.isVisible = true
+                        binding.textviewHomeFavoriteEmpty.isVisible = false
+                        val recentFavoriteIds = favoriteIds.reversed().take(1)
                         if (recentFavoriteIds.isNotEmpty()) {
                             db.collection("notices").whereIn(com.google.firebase.firestore.FieldPath.documentId(), recentFavoriteIds).get()
                                 .addOnSuccessListener { noticeDocuments ->
@@ -624,7 +537,7 @@ class HomeMainFragment : Fragment() {
                                                 url = doc.getString("url") ?: "",
                                                 viewCount = (doc.getLong("viewCount") ?: 0L).toInt()
                                             )
-                                            notice.isFavorite = true // 즐겨찾기 목록에서 가져왔으므로 true로 설정
+                                            notice.isFavorite = true
                                             notice
                                         }
                                         favoriteAdapter.submitList(favoritePreviewList)
@@ -633,7 +546,7 @@ class HomeMainFragment : Fragment() {
                                     }
                                 }
                                 .addOnFailureListener { e ->
-                                    Toast.makeText(context, "[즐겨찾기] 글 로드 실패: ${e.message}", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(requireContext(), "[즐겨찾기] 글 로드 실패: ${e.message}", Toast.LENGTH_LONG).show()
                                     showEmptyFavorites()
                                 }
                         } else {
@@ -647,51 +560,47 @@ class HomeMainFragment : Fragment() {
                 }
             }
             .addOnFailureListener { e ->
-                Toast.makeText(context, "[즐겨찾기] 사용자 정보 로드 실패: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), "[즐겨찾기] 사용자 정보 로드 실패: ${e.message}", Toast.LENGTH_LONG).show()
                 showEmptyFavorites()
             }
     }
 
     private fun showEmptyFavorites() {
-        binding.recyclerviewHomeFavorite.visibility = View.GONE
-        binding.textviewHomeFavoriteEmpty.visibility = View.VISIBLE
+        binding.recyclerviewHomeFavorite.isVisible = false
+        binding.textviewHomeFavoriteEmpty.isVisible = true
         favoriteAdapter.submitList(emptyList())
     }
 
     private fun updateFavoriteStatus(notice: DataNotificationItem) {
         val userId = auth.currentUser?.uid ?: return
         val userDocRef = db.collection("users").document(userId)
-        val noticeDocId = "${notice.category}_${notice.id}" // Firestore 문서 ID 형식에 맞게 수정
+        val noticeDocId = "${notice.category}_${notice.id}"
         val newFavoriteState = !notice.isFavorite
 
         val message = if (newFavoriteState) "즐겨찾기에 추가되었습니다." else "즐겨찾기에서 삭제되었습니다."
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
 
-        // Popular 리스트의 아이템 상태 업데이트
         val popularList = popularAdapter.currentList.toMutableList()
         val popularIndex = popularList.indexOfFirst { it.id == notice.id && it.category == notice.category }
         if (popularIndex != -1) {
             popularList[popularIndex].isFavorite = newFavoriteState
-            popularAdapter.submitList(popularList.toList()) // DiffUtil이 변경된 아이템만 업데이트
+            popularAdapter.submitList(popularList.toList())
         }
 
-        // Favorite 리스트 업데이트 (현재 홈에서는 최근 1개만 보여주므로, 전체 즐겨찾기 화면에서 영향)
-        fetchHomeFavorites() // 즐겨찾기 데이터를 다시 로드하여 UI를 갱신
+        fetchHomeFavorites()
 
-        // Firestore 업데이트
         val updateTask = if (newFavoriteState) {
             userDocRef.update("favorites", FieldValue.arrayUnion(noticeDocId))
         } else {
             userDocRef.update("favorites", FieldValue.arrayRemove(noticeDocId))
         }
         updateTask.addOnFailureListener {
-            // Firestore 업데이트 실패 시 UI 롤백
-            Toast.makeText(context, "즐겨찾기 상태 변경 실패 (DB)", Toast.LENGTH_SHORT).show()
-            fetchHomeFavorites() // 즐겨찾기 데이터를 다시 로드 (롤백된 상태 반영)
+            Toast.makeText(requireContext(), "즐겨찾기 상태 변경 실패 (DB)", Toast.LENGTH_SHORT).show()
+            fetchHomeFavorites()
             val currentPopular = popularAdapter.currentList.toMutableList()
             val pIndex = currentPopular.indexOfFirst { it.id == notice.id && it.category == notice.category }
             if (pIndex != -1) {
-                currentPopular[pIndex].isFavorite = !newFavoriteState // 원래 상태로 복원
+                currentPopular[pIndex].isFavorite = !newFavoriteState
                 popularAdapter.submitList(currentPopular.toList())
             }
         }
@@ -700,20 +609,20 @@ class HomeMainFragment : Fragment() {
     private fun updateFavoritesStateForList(list: List<DataNotificationItem>, onComplete: (List<DataNotificationItem>) -> Unit) {
         val userId = auth.currentUser?.uid
         if (userId == null) {
-            onComplete(list) // 사용자가 로그인하지 않은 경우, 즐겨찾기 상태 변경 없이 완료
+            onComplete(list)
             return
         }
         db.collection("users").document(userId).get().addOnSuccessListener { document ->
             if (document != null && document.exists()) {
+                @Suppress("UNCHECKED_CAST")
                 val favoriteIds = document.get("favorites") as? List<String> ?: emptyList()
                 list.forEach { notice ->
-                    val noticeDocId = "${notice.category}_${notice.id}" // Firestore 문서 ID 형식
+                    val noticeDocId = "${notice.category}_${notice.id}"
                     notice.isFavorite = favoriteIds.contains(noticeDocId)
                 }
             }
             onComplete(list)
         }.addOnFailureListener {
-            // Firestore 조회 실패 시, 즐겨찾기 상태는 기본값(false)으로 두고 완료
             onComplete(list)
         }
     }
@@ -721,9 +630,9 @@ class HomeMainFragment : Fragment() {
     private fun openInAppBrowser(url: String) {
         try {
             val customTabsIntent = CustomTabsIntent.Builder().build()
-            customTabsIntent.launchUrl(requireContext(), Uri.parse(url))
+            customTabsIntent.launchUrl(requireContext(), url.toUri())
         } catch (e: Exception) {
-            Toast.makeText(context, "페이지를 열 수 없습니다: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "페이지를 열 수 없습니다: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -731,31 +640,30 @@ class HomeMainFragment : Fragment() {
         autoScrollRunnable = Runnable {
             val popularItemsCount = popularAdapter.itemCount
             if (popularItemsCount > 0) {
-                currentPopularPosition = (currentPopularPosition + 1) % popularItemsCount
-                
-                val layoutManager = binding.recyclerviewHomePopular.layoutManager as? LinearLayoutManager
-                layoutManager?.let {
-                    val smoothScroller = object : LinearSmoothScroller(requireContext()) { 
-                        override fun calculateSpeedPerPixel(displayMetrics: DisplayMetrics): Float {
-                            return SCROLL_SPEED_MILLISECONDS_PER_INCH / displayMetrics.densityDpi
-                        }
+                val smoothScroller = object : LinearSmoothScroller(requireContext()) {
+                    override fun getVerticalSnapPreference(): Int {
+                        return SNAP_TO_START
                     }
-                    smoothScroller.targetPosition = currentPopularPosition
-                    it.startSmoothScroll(smoothScroller)
+
+                    override fun calculateSpeedPerPixel(displayMetrics: DisplayMetrics): Float {
+                        return SCROLL_SPEED_MILLISECONDS_PER_INCH / displayMetrics.densityDpi
+                    }
                 }
-                // Removed: autoScrollHandler.postDelayed(this.autoScrollRunnable, AUTO_SCROLL_DELAY)
+                currentPopularPosition = (currentPopularPosition + 1) % popularItemsCount
+                smoothScroller.targetPosition = currentPopularPosition
+                binding.recyclerviewHomePopular.layoutManager?.startSmoothScroll(smoothScroller)
+                autoScrollHandler.postDelayed(this.autoScrollRunnable, autoScrollDelay)
             }
         }
     }
 
     private fun startAutoScroll() {
-        // Ensure runnable is initialized
         if (!this::autoScrollRunnable.isInitialized) {
             initializeAutoScroller()
         }
-        stopAutoScroll() // Stop any existing scrolls before starting a new one
-        if (popularAdapter.itemCount > 0) { // Only start if there are items
-            autoScrollHandler.postDelayed(autoScrollRunnable, AUTO_SCROLL_DELAY)
+        stopAutoScroll()
+        if (popularAdapter.itemCount > 0) {
+            autoScrollHandler.postDelayed(autoScrollRunnable, autoScrollDelay)
         }
     }
 
@@ -765,11 +673,46 @@ class HomeMainFragment : Fragment() {
         }
     }
 
+    private fun setupAdvancedScrollAnimation() {
+        binding.textviewRandomMessage.post {
+            val maxTopMargin = 100.dpToPx(requireContext())
+            val collapsedToolbarHeight = 56.dpToPx(requireContext())
+            val minTopMargin = collapsedToolbarHeight - binding.textviewRandomMessage.height
+            val maxBottomMargin = 80.dpToPx(requireContext())
+
+            offsetChangedListener = AppBarLayout.OnOffsetChangedListener { appBarLayout, verticalOffset ->
+                val scrollRange = appBarLayout.totalScrollRange
+                if (scrollRange == 0) return@OnOffsetChangedListener
+
+                val scrollRatio = abs(verticalOffset).toFloat() / scrollRange
+
+                // Update TextView's top margin
+                val textParams = binding.textviewRandomMessage.layoutParams as ViewGroup.MarginLayoutParams
+                val newTopMargin = (minTopMargin + (maxTopMargin - minTopMargin) * (1 - scrollRatio)).toInt()
+                if (textParams.topMargin != newTopMargin) {
+                    textParams.topMargin = newTopMargin
+                    binding.textviewRandomMessage.layoutParams = textParams
+                }
+
+                // Update Anchor View's top margin (which acts as TextView's bottom margin)
+                val anchorParams = binding.anchorView.layoutParams as ViewGroup.MarginLayoutParams
+                val newBottomMargin = (maxBottomMargin * (1 - scrollRatio)).toInt()
+                if (anchorParams.topMargin != newBottomMargin) {
+                    anchorParams.topMargin = newBottomMargin
+                    binding.anchorView.layoutParams = anchorParams
+                }
+            }
+            binding.appBarLayout.addOnOffsetChangedListener(offsetChangedListener)
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
-        stopAutoScroll() // Ensure to stop handler to prevent leaks
-        snapHelper?.attachToRecyclerView(null) // 리소스 정리
-        snapHelper = null
+        stopAutoScroll()
+        snapHelper?.attachToRecyclerView(null)
+        offsetChangedListener?.let {
+            binding.appBarLayout.removeOnOffsetChangedListener(it)
+        }
         _binding = null
     }
 }
