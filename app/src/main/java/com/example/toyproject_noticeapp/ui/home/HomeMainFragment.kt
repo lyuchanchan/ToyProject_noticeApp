@@ -1,7 +1,8 @@
-
 package com.example.toyproject_noticeapp.ui.home
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Rect
 import android.os.Bundle
@@ -11,6 +12,8 @@ import android.util.DisplayMetrics
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -269,7 +272,7 @@ class HomeMainFragment : Fragment() {
         popularAdapter = AdapterNotificationList(onItemClick = { notice -> openInAppBrowser(notice.url) }, onFavoriteClick = { notice -> updateFavoriteStatus(notice) })
         binding.recyclerviewHomePopular.adapter = popularAdapter
         binding.recyclerviewHomePopular.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-        
+
         snapHelper = PagerSnapHelper()
         snapHelper?.attachToRecyclerView(binding.recyclerviewHomePopular)
 
@@ -315,23 +318,25 @@ class HomeMainFragment : Fragment() {
             private var draggedItem: Shortcut? = null
             private var lastTargetRecyclerView: RecyclerView? = null
 
-            private fun findTargetRecyclerView(viewHolder: RecyclerView.ViewHolder): RecyclerView? {
-                val viewCenterRect = Rect()
-                viewHolder.itemView.getGlobalVisibleRect(viewCenterRect)
-                val centerX = viewCenterRect.centerX()
-                val centerY = viewCenterRect.centerY()
+            // For drag shadow
+            private var dragShadow: ImageView? = null
+            private var dragShadowLP: FrameLayout.LayoutParams? = null
+            private var draggedItemView: View? = null
+            private var initialX: Float = 0f
+            private var initialY: Float = 0f
 
+            private fun findTargetRecyclerView(x: Int, y: Int): RecyclerView? {
                 val hiddenRvRect = Rect()
                 if (binding.recyclerviewHiddenShortcuts.isVisible) {
                     binding.recyclerviewHiddenShortcuts.getGlobalVisibleRect(hiddenRvRect)
-                    if (hiddenRvRect.contains(centerX, centerY)) {
+                    if (hiddenRvRect.contains(x, y)) {
                         return binding.recyclerviewHiddenShortcuts
                     }
                 }
 
                 val visibleRvRect = Rect()
                 binding.recyclerviewHomeShortcuts.getGlobalVisibleRect(visibleRvRect)
-                if (visibleRvRect.contains(centerX, centerY)) {
+                if (visibleRvRect.contains(x, y)) {
                     return binding.recyclerviewHomeShortcuts
                 }
 
@@ -359,26 +364,60 @@ class HomeMainFragment : Fragment() {
                 if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
                     setAppBarScrollingEnabled(false)
                     if (viewHolder == null) return
+
+                    draggedItemView = viewHolder.itemView
                     val position = viewHolder.adapterPosition
                     if (position != RecyclerView.NO_POSITION) {
                         sourceAdapter = (viewHolder.itemView.parent as RecyclerView).adapter as? HomeShortcutAdapter
                         draggedItem = sourceAdapter?.items?.getOrNull(position)
                     }
-                    viewHolder.itemView.alpha = 0.7f
-                    viewHolder.itemView.elevation = 16f
-                    binding.nestedScrollView.requestDisallowInterceptTouchEvent(true)
+
+                    // Create bitmap
+                    val bitmap = Bitmap.createBitmap(draggedItemView!!.width, draggedItemView!!.height, Bitmap.Config.ARGB_8888)
+                    val canvas = Canvas(bitmap)
+                    draggedItemView!!.draw(canvas)
+
+                    // Create drag shadow
+                    dragShadow = ImageView(requireContext()).apply {
+                        setImageBitmap(bitmap)
+                        elevation = requireContext().resources.getDimension(R.dimen.drag_elevation)
+                    }
+
+                    // Get initial position
+                    val location = IntArray(2)
+                    draggedItemView!!.getLocationOnScreen(location)
+                    initialX = location[0].toFloat()
+                    initialY = location[1].toFloat()
+
+                    // Set layout params for drag shadow
+                    dragShadowLP = FrameLayout.LayoutParams(draggedItemView!!.width, draggedItemView!!.height).apply {
+                        leftMargin = initialX.toInt()
+                        topMargin = initialY.toInt()
+                    }
+
+                    // Add shadow to root and hide original item
+                    binding.rootFrameLayout.addView(dragShadow, dragShadowLP)
+                    draggedItemView!!.visibility = View.INVISIBLE
                 }
             }
 
             override fun onChildDraw(
-                c: android.graphics.Canvas, recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder,
+                c: Canvas, recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder,
                 dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean
             ) {
-                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+                if (actionState == ItemTouchHelper.ACTION_STATE_DRAG && isCurrentlyActive && dragShadow != null) {
+                    // Update drag shadow position
+                    dragShadowLP?.let {
+                        it.leftMargin = (initialX + dX).toInt()
+                        it.topMargin = (initialY + dY).toInt()
+                        dragShadow!!.layoutParams = it
+                    }
 
-                if (actionState == ItemTouchHelper.ACTION_STATE_DRAG && isCurrentlyActive) {
-                    val currentTarget = findTargetRecyclerView(viewHolder)
-                    lastTargetRecyclerView = currentTarget // Store the target
+                    // Find target and highlight
+                    val shadowCenterX = (initialX + dX + draggedItemView!!.width / 2).toInt()
+                    val shadowCenterY = (initialY + dY + draggedItemView!!.height / 2).toInt()
+                    val currentTarget = findTargetRecyclerView(shadowCenterX, shadowCenterY)
+                    lastTargetRecyclerView = currentTarget
 
                     binding.recyclerviewHomeShortcuts.setBackgroundColor(
                         if (currentTarget == binding.recyclerviewHomeShortcuts && currentTarget.adapter != sourceAdapter) "#E0E0E0".toColorInt() else Color.TRANSPARENT
@@ -386,18 +425,23 @@ class HomeMainFragment : Fragment() {
                     binding.recyclerviewHiddenShortcuts.setBackgroundColor(
                         if (currentTarget == binding.recyclerviewHiddenShortcuts && currentTarget.adapter != sourceAdapter) "#E0E0E0".toColorInt() else Color.TRANSPARENT
                     )
+                } else {
+                    super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
                 }
             }
 
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
-                viewHolder.itemView.alpha = 1.0f
-                viewHolder.itemView.elevation = 0f
-                binding.nestedScrollView.requestDisallowInterceptTouchEvent(false)
+
+                // Remove shadow and show original item
+                dragShadow?.let { binding.rootFrameLayout.removeView(it) }
+                dragShadow = null
+                draggedItemView?.visibility = View.VISIBLE
+
                 binding.recyclerviewHomeShortcuts.setBackgroundColor(Color.TRANSPARENT)
                 binding.recyclerviewHiddenShortcuts.setBackgroundColor(Color.TRANSPARENT)
 
-                val targetRecyclerView = lastTargetRecyclerView // Use the stored value
+                val targetRecyclerView = lastTargetRecyclerView
                 val targetAdapter = targetRecyclerView?.adapter as? HomeShortcutAdapter
 
                 if (sourceAdapter != null && targetAdapter != null && sourceAdapter != targetAdapter && draggedItem != null) {
@@ -413,9 +457,10 @@ class HomeMainFragment : Fragment() {
                 // Reset state
                 sourceAdapter = null
                 draggedItem = null
-                lastTargetRecyclerView = null // Reset the stored value
+                lastTargetRecyclerView = null
+                draggedItemView = null
 
-                // Re-enable scrolling after all operations are complete
+                // Re-enable scrolling
                 setAppBarScrollingEnabled(true)
             }
         }
@@ -453,7 +498,7 @@ class HomeMainFragment : Fragment() {
                                 binding.tabLayoutPopularIndicator.addTab(binding.tabLayoutPopularIndicator.newTab())
                             }
                             if (binding.tabLayoutPopularIndicator.selectedTabPosition == -1 || binding.tabLayoutPopularIndicator.selectedTabPosition >= updatedList.size) {
-                                 binding.tabLayoutPopularIndicator.getTabAt(0)?.select()
+                                binding.tabLayoutPopularIndicator.getTabAt(0)?.select()
                             }
                             currentPopularPosition = 0
                             startAutoScroll()
@@ -685,3 +730,4 @@ class HomeMainFragment : Fragment() {
         _binding = null
     }
 }
+

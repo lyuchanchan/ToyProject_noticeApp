@@ -1,252 +1,155 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_frame_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.home.HomeMainFragment">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/app_bar_layout"
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
-        app:elevation="0dp">
+        android:layout_height="match_parent">
 
-        <com.google.android.material.appbar.CollapsingToolbarLayout
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/app_bar_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_scrollFlags="scroll|enterAlways|snap">
+            android:background="@android:color/transparent"
+            app:elevation="0dp">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <ImageView
-                    android:id="@+id/imageview_app_icon"
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginTop="16dp"
-                    android:contentDescription="App Icon"
-                    android:src="@drawable/hanshin_logo"
-                    app:layout_constraintDimensionRatio="1:1"
-                    app:layout_constraintEnd_toStartOf="@+id/textview_app_title"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintWidth_percent="0.1" />
-
-                <TextView
-                    android:id="@+id/textview_app_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="Hanshin Now!"
-                    android:textColor="@color/black"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
-                    app:layout_constraintStart_toEndOf="@id/imageview_app_icon"
-                    app:layout_constraintTop_toTopOf="@id/imageview_app_icon" />
-
-                <ImageView
-                    android:id="@+id/imageview_search"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_marginEnd="16dp"
-                    android:contentDescription="Search Icon"
-                    android:src="@drawable/ic_search"
-                    app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
-                    app:layout_constraintEnd_toStartOf="@id/imageview_notifications"
-                    app:layout_constraintTop_toTopOf="@id/imageview_app_icon"
-                    app:tint="?android:attr/textColorPrimary" />
-
-                <ImageView
-                    android:id="@+id/imageview_notifications"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_marginEnd="16dp"
-                    android:contentDescription="Notifications Icon"
-                    android:src="@drawable/ic_notifications"
-                    app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
-                    app:layout_constraintEnd_toStartOf="@id/imageview_settings"
-                    app:layout_constraintTop_toTopOf="@id/imageview_app_icon" />
-
-                <ImageView
-                    android:id="@+id/imageview_settings"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_marginEnd="16dp"
-                    android:contentDescription="Settings Icon"
-                    android:src="@drawable/ic_settings"
-                    app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="@id/imageview_app_icon"
-                    app:tint="?android:attr/textColorPrimary" />
-
-                <TextView
-                    android:id="@+id/textview_random_message"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="16dp"
-                    android:layout_marginTop="100dp"
-                    android:gravity="center"
-                    android:textColor="@color/text_primary"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/imageview_app_icon"
-                    tools:text="오늘도 놓치지 말고 체크✔️" />
-
-                <View
-                    android:id="@+id/anchor_view"
-                    android:layout_width="1dp"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="80dp"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/textview_random_message" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-        </com.google.android.material.appbar.CollapsingToolbarLayout>
-    </com.google.android.material.appbar.AppBarLayout>
-
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/nested_scroll_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="0dp"
-        android:fillViewport="true"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_shortcuts"
+            <com.google.android.material.appbar.CollapsingToolbarLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/stylish_purple"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="4dp">
+                app:layout_scrollFlags="scroll|enterAlways|snap">
 
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:clipChildren="false"
-                    android:clipToPadding="false"
-                    android:padding="16dp">
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:id="@+id/imageview_app_icon"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="16dp"
+                        android:contentDescription="App Icon"
+                        android:src="@drawable/hanshin_logo"
+                        app:layout_constraintDimensionRatio="1:1"
+                        app:layout_constraintEnd_toStartOf="@+id/textview_app_title"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintWidth_percent="0.1" />
 
                     <TextView
-                        android:id="@+id/textview_home_shortcut_title"
+                        android:id="@+id/textview_app_title"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="골라보기"
-                        android:textColor="@color/text_primary"
-                        android:textSize="18sp"
+                        android:layout_marginStart="8dp"
+                        android:text="Hanshin Now!"
+                        android:textColor="@color/black"
+                        android:textSize="20sp"
                         android:textStyle="bold"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
+                        app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
+                        app:layout_constraintStart_toEndOf="@id/imageview_app_icon"
+                        app:layout_constraintTop_toTopOf="@id/imageview_app_icon" />
+
+                    <ImageView
+                        android:id="@+id/imageview_search"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_marginEnd="16dp"
+                        android:contentDescription="Search Icon"
+                        android:src="@drawable/ic_search"
+                        app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
+                        app:layout_constraintEnd_toStartOf="@id/imageview_notifications"
+                        app:layout_constraintTop_toTopOf="@id/imageview_app_icon"
+                        app:tint="?android:attr/textColorPrimary" />
+
+                    <ImageView
+                        android:id="@+id/imageview_notifications"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_marginEnd="16dp"
+                        android:contentDescription="Notifications Icon"
+                        android:src="@drawable/ic_notifications"
+                        app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
+                        app:layout_constraintEnd_toStartOf="@id/imageview_settings"
+                        app:layout_constraintTop_toTopOf="@id/imageview_app_icon" />
+
+                    <ImageView
+                        android:id="@+id/imageview_settings"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_marginEnd="16dp"
+                        android:contentDescription="Settings Icon"
+                        android:src="@drawable/ic_settings"
+                        app:layout_constraintBottom_toBottomOf="@id/imageview_app_icon"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="@id/imageview_app_icon"
+                        app:tint="?android:attr/textColorPrimary" />
 
                     <TextView
-                        android:id="@+id/textview_home_shortcut_edit"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="편집"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="14sp"
-                        app:layout_constraintBottom_toBottomOf="@id/textview_home_shortcut_title"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="@id/textview_home_shortcut_title" />
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/recyclerview_home_shortcuts"
+                        android:id="@+id/textview_random_message"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:clipChildren="false"
-                        android:clipToPadding="false"
-                        android:nestedScrollingEnabled="false"
-                        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_marginTop="100dp"
+                        android:gravity="center"
+                        android:textColor="@color/text_primary"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/textview_home_shortcut_title"
-                        app:spanCount="3"
-                        tools:itemCount="9"
-                        tools:listitem="@layout/item_home_shortcut" />
+                        app:layout_constraintTop_toBottomOf="@id/imageview_app_icon"
+                        tools:text="오늘도 놓치지 말고 체크✔️" />
 
                     <View
-                        android:id="@+id/divider_hidden_shortcuts"
-                        android:layout_width="0dp"
+                        android:id="@+id/anchor_view"
+                        android:layout_width="1dp"
                         android:layout_height="1dp"
-                        android:layout_marginTop="16dp"
-                        android:background="?android:attr/listDivider"
-                        android:visibility="gone"
-                        app:layout_constraintEnd_toEndOf="parent"
+                        android:layout_marginTop="80dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/recyclerview_home_shortcuts" />
+                        app:layout_constraintTop_toBottomOf="@id/textview_random_message" />
 
-                    <TextView
-                        android:id="@+id/textview_hidden_shortcuts_title"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="숨긴 메뉴"
-                        android:textColor="@color/text_primary"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:visibility="gone"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/divider_hidden_shortcuts" />
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/recyclerview_hidden_shortcuts"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:clipChildren="false"
-                        android:clipToPadding="false"
-                        android:nestedScrollingEnabled="false"
-                        android:visibility="gone"
-                        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/textview_hidden_shortcuts_title"
-                        app:spanCount="3"
-                        tools:itemCount="5"
-                        tools:listitem="@layout/item_home_shortcut" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
-            </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.card.MaterialCardView
+            </com.google.android.material.appbar.CollapsingToolbarLayout>
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/nested_scroll_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="0dp"
+            android:fillViewport="true"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                app:cardBackgroundColor="@color/stylish_purple"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="4dp">
+                android:orientation="vertical"
+                android:padding="16dp">
 
-                <LinearLayout
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_shortcuts"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    app:cardBackgroundColor="@color/stylish_purple"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp">
 
                     <androidx.constraintlayout.widget.ConstraintLayout
-                        android:id="@+id/layout_home_popular_header"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
+                        android:layout_height="wrap_content"
+                        android:padding="16dp">
 
                         <TextView
-                            android:id="@+id/textview_home_popular_title"
+                            android:id="@+id/textview_home_shortcut_title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Now! 추천"
+                            android:text="골라보기"
                             android:textColor="@color/text_primary"
                             android:textSize="18sp"
                             android:textStyle="bold"
@@ -254,101 +157,198 @@
                             app:layout_constraintTop_toTopOf="parent" />
 
                         <TextView
-                            android:id="@+id/textview_home_popular_more"
+                            android:id="@+id/textview_home_shortcut_edit"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="더보기"
+                            android:text="편집"
                             android:textColor="@color/text_secondary"
                             android:textSize="14sp"
+                            app:layout_constraintBottom_toBottomOf="@id/textview_home_shortcut_title"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="@id/textview_home_shortcut_title" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recyclerview_home_shortcuts"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:nestedScrollingEnabled="false"
+                            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/textview_home_shortcut_title"
+                            app:spanCount="3"
+                            tools:itemCount="9"
+                            tools:listitem="@layout/item_home_shortcut" />
+
+                        <View
+                            android:id="@+id/divider_hidden_shortcuts"
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="16dp"
+                            android:background="?android:attr/listDivider"
                             android:visibility="gone"
                             app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
-                    </androidx.constraintlayout.widget.ConstraintLayout>
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/recyclerview_home_popular"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:nestedScrollingEnabled="false"
-                        android:orientation="horizontal"
-                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                        tools:itemCount="5"
-                        tools:listitem="@layout/item_notification_list" />
-
-                    <com.google.android.material.tabs.TabLayout
-                        android:id="@+id/tab_layout_popular_indicator"
-                        android:layout_width="match_parent"
-                        android:layout_height="2dp"
-                        android:layout_marginTop="8dp"
-                        android:background="@android:color/transparent"
-                        android:minHeight="2dp"
-                        app:tabBackground="@drawable/tab_selector"
-                        app:tabGravity="center"
-                        app:tabIndicatorHeight="0dp"
-                        app:tabMode="scrollable"
-                        app:tabPaddingBottom="0dp"
-                        app:tabPaddingEnd="0dp"
-                        app:tabPaddingStart="0dp"
-                        app:tabPaddingTop="0dp" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="16dp"
-                        android:background="?android:attr/listDivider" />
-
-                    <androidx.constraintlayout.widget.ConstraintLayout
-                        android:id="@+id/layout_home_favorite_header"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp">
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/recyclerview_home_shortcuts" />
 
                         <TextView
-                            android:id="@+id/textview_home_favorite_title"
+                            android:id="@+id/textview_hidden_shortcuts_title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="최근 즐겨찾기"
+                            android:layout_marginTop="16dp"
+                            android:text="숨긴 메뉴"
                             android:textColor="@color/text_primary"
                             android:textSize="18sp"
                             android:textStyle="bold"
+                            android:visibility="gone"
                             app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
+                            app:layout_constraintTop_toBottomOf="@id/divider_hidden_shortcuts" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recyclerview_hidden_shortcuts"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:nestedScrollingEnabled="false"
+                            android:visibility="gone"
+                            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/textview_hidden_shortcuts_title"
+                            app:spanCount="3"
+                            tools:itemCount="5"
+                            tools:listitem="@layout/item_home_shortcut" />
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:cardBackgroundColor="@color/stylish_purple"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:id="@+id/layout_home_popular_header"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                android:id="@+id/textview_home_popular_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Now! 추천"
+                                android:textColor="@color/text_primary"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+
+                            <TextView
+                                android:id="@+id/textview_home_popular_more"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="더보기"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="14sp"
+                                android:visibility="gone"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recyclerview_home_popular"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:nestedScrollingEnabled="false"
+                            android:orientation="horizontal"
+                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                            tools:itemCount="5"
+                            tools:listitem="@layout/item_notification_list" />
+
+                        <com.google.android.material.tabs.TabLayout
+                            android:id="@+id/tab_layout_popular_indicator"
+                            android:layout_width="match_parent"
+                            android:layout_height="2dp"
+                            android:layout_marginTop="8dp"
+                            android:background="@android:color/transparent"
+                            android:minHeight="2dp"
+                            app:tabBackground="@drawable/tab_selector"
+                            app:tabGravity="center"
+                            app:tabIndicatorHeight="0dp"
+                            app:tabMode="scrollable"
+                            app:tabPaddingBottom="0dp"
+                            app:tabPaddingEnd="0dp"
+                            app:tabPaddingStart="0dp"
+                            app:tabPaddingTop="0dp" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="16dp"
+                            android:background="?android:attr/listDivider" />
+
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:id="@+id/layout_home_favorite_header"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp">
+
+                            <TextView
+                                android:id="@+id/textview_home_favorite_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="최근 즐겨찾기"
+                                android:textColor="@color/text_primary"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+
+                            <TextView
+                                android:id="@+id/textview_home_favorite_more"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="더보기"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="14sp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recyclerview_home_favorite"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:nestedScrollingEnabled="false"
+                            tools:itemCount="1"
+                            tools:listitem="@layout/item_notification_list" />
 
                         <TextView
-                            android:id="@+id/textview_home_favorite_more"
-                            android:layout_width="wrap_content"
+                            android:id="@+id/textview_home_favorite_empty"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="더보기"
+                            android:gravity="center"
+                            android:padding="24dp"
+                            android:text="아직 등록된 즐겨찾기가 없어요!"
                             android:textColor="@color/text_secondary"
-                            android:textSize="14sp"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
-                    </androidx.constraintlayout.widget.ConstraintLayout>
+                            android:textSize="16sp"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+                    </LinearLayout>
 
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/recyclerview_home_favorite"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:nestedScrollingEnabled="false"
-                        tools:itemCount="1"
-                        tools:listitem="@layout/item_notification_list" />
-
-                    <TextView
-                        android:id="@+id/textview_home_favorite_empty"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:padding="24dp"
-                        android:text="아직 등록된 즐겨찾기가 없어요!"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="16sp"
-                        android:visibility="gone"
-                        tools:visibility="visible" />
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</FrameLayout>
