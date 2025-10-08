@@ -13,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
@@ -237,6 +238,16 @@ class HomeMainFragment : Fragment() {
         }
     }
 
+    private fun setAppBarScrollingEnabled(enabled: Boolean) {
+        (binding.appBarLayout.layoutParams as? CoordinatorLayout.LayoutParams)?.let { params ->
+            (params.behavior as? AppBarLayout.Behavior)?.setDragCallback(object : AppBarLayout.Behavior.DragCallback() {
+                override fun canDrag(appBarLayout: AppBarLayout): Boolean {
+                    return enabled
+                }
+            })
+        }
+    }
+
     private fun setupRecyclerViews() {
         shortcutAdapter = HomeShortcutAdapter(visibleShortcutsData) { shortcut ->
             if (!isEditMode) {
@@ -302,8 +313,30 @@ class HomeMainFragment : Fragment() {
         ) {
             private var sourceAdapter: HomeShortcutAdapter? = null
             private var draggedItem: Shortcut? = null
-            private var fromPosition: Int = -1
-            private var isOverTargetForDrop = false
+            private var lastTargetRecyclerView: RecyclerView? = null
+
+            private fun findTargetRecyclerView(viewHolder: RecyclerView.ViewHolder): RecyclerView? {
+                val viewCenterRect = Rect()
+                viewHolder.itemView.getGlobalVisibleRect(viewCenterRect)
+                val centerX = viewCenterRect.centerX()
+                val centerY = viewCenterRect.centerY()
+
+                val hiddenRvRect = Rect()
+                if (binding.recyclerviewHiddenShortcuts.isVisible) {
+                    binding.recyclerviewHiddenShortcuts.getGlobalVisibleRect(hiddenRvRect)
+                    if (hiddenRvRect.contains(centerX, centerY)) {
+                        return binding.recyclerviewHiddenShortcuts
+                    }
+                }
+
+                val visibleRvRect = Rect()
+                binding.recyclerviewHomeShortcuts.getGlobalVisibleRect(visibleRvRect)
+                if (visibleRvRect.contains(centerX, centerY)) {
+                    return binding.recyclerviewHomeShortcuts
+                }
+
+                return null
+            }
 
             override fun onMove(
                 recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder
@@ -324,11 +357,12 @@ class HomeMainFragment : Fragment() {
             override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
                 super.onSelectedChanged(viewHolder, actionState)
                 if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
+                    setAppBarScrollingEnabled(false)
                     if (viewHolder == null) return
-                    sourceAdapter = (viewHolder.itemView.parent as RecyclerView).adapter as? HomeShortcutAdapter
-                    fromPosition = viewHolder.adapterPosition
-                    if (fromPosition != RecyclerView.NO_POSITION) {
-                        draggedItem = sourceAdapter?.items?.getOrNull(fromPosition)
+                    val position = viewHolder.adapterPosition
+                    if (position != RecyclerView.NO_POSITION) {
+                        sourceAdapter = (viewHolder.itemView.parent as RecyclerView).adapter as? HomeShortcutAdapter
+                        draggedItem = sourceAdapter?.items?.getOrNull(position)
                     }
                     viewHolder.itemView.alpha = 0.7f
                     viewHolder.itemView.elevation = 16f
@@ -343,26 +377,15 @@ class HomeMainFragment : Fragment() {
                 super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
 
                 if (actionState == ItemTouchHelper.ACTION_STATE_DRAG && isCurrentlyActive) {
-                    val targetRecyclerView = if (recyclerView.id == binding.recyclerviewHomeShortcuts.id) {
-                        binding.recyclerviewHiddenShortcuts
-                    } else {
-                        binding.recyclerviewHomeShortcuts
-                    }
+                    val currentTarget = findTargetRecyclerView(viewHolder)
+                    lastTargetRecyclerView = currentTarget // Store the target
 
-                    val targetRect = Rect()
-                    targetRecyclerView.getGlobalVisibleRect(targetRect)
-
-                    val viewRect = Rect()
-                    viewHolder.itemView.getGlobalVisibleRect(viewRect)
-                    viewRect.offset(dX.toInt(), dY.toInt())
-
-                    isOverTargetForDrop = Rect.intersects(targetRect, viewRect) && targetRecyclerView.isVisible
-
-                    if (isOverTargetForDrop) {
-                        targetRecyclerView.setBackgroundColor("#E0E0E0".toColorInt())
-                    } else {
-                        targetRecyclerView.setBackgroundColor(Color.TRANSPARENT)
-                    }
+                    binding.recyclerviewHomeShortcuts.setBackgroundColor(
+                        if (currentTarget == binding.recyclerviewHomeShortcuts && currentTarget.adapter != sourceAdapter) "#E0E0E0".toColorInt() else Color.TRANSPARENT
+                    )
+                    binding.recyclerviewHiddenShortcuts.setBackgroundColor(
+                        if (currentTarget == binding.recyclerviewHiddenShortcuts && currentTarget.adapter != sourceAdapter) "#E0E0E0".toColorInt() else Color.TRANSPARENT
+                    )
                 }
             }
 
@@ -371,31 +394,29 @@ class HomeMainFragment : Fragment() {
                 viewHolder.itemView.alpha = 1.0f
                 viewHolder.itemView.elevation = 0f
                 binding.nestedScrollView.requestDisallowInterceptTouchEvent(false)
+                binding.recyclerviewHomeShortcuts.setBackgroundColor(Color.TRANSPARENT)
+                binding.recyclerviewHiddenShortcuts.setBackgroundColor(Color.TRANSPARENT)
 
-                if (isOverTargetForDrop && sourceAdapter != null && draggedItem != null && fromPosition != -1) {
-                    val targetRecyclerView = if (recyclerView.id == binding.recyclerviewHomeShortcuts.id) {
-                        binding.recyclerviewHiddenShortcuts
-                    } else {
-                        binding.recyclerviewHomeShortcuts
-                    }
-                    val targetAdapter = targetRecyclerView.adapter as HomeShortcutAdapter
+                val targetRecyclerView = lastTargetRecyclerView // Use the stored value
+                val targetAdapter = targetRecyclerView?.adapter as? HomeShortcutAdapter
 
-                    if (sourceAdapter != targetAdapter) {
-                        sourceAdapter?.removeItem(fromPosition)?.also { removedItem ->
+                if (sourceAdapter != null && targetAdapter != null && sourceAdapter != targetAdapter && draggedItem != null) {
+                    val currentPosition = sourceAdapter!!.items.indexOf(draggedItem)
+                    if (currentPosition != -1) {
+                        sourceAdapter!!.removeItem(currentPosition)?.also { removedItem ->
                             targetAdapter.addItem(removedItem)
                             Toast.makeText(requireContext(), "'${removedItem.name}' 이동 완료", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
 
-                binding.recyclerviewHomeShortcuts.setBackgroundColor(Color.TRANSPARENT)
-                binding.recyclerviewHiddenShortcuts.setBackgroundColor(Color.TRANSPARENT)
-
                 // Reset state
                 sourceAdapter = null
                 draggedItem = null
-                fromPosition = -1
-                isOverTargetForDrop = false
+                lastTargetRecyclerView = null // Reset the stored value
+
+                // Re-enable scrolling after all operations are complete
+                setAppBarScrollingEnabled(true)
             }
         }
 
