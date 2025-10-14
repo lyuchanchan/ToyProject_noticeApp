@@ -276,11 +276,6 @@ class HomeMainFragment : Fragment() {
         snapHelper = PagerSnapHelper()
         snapHelper?.attachToRecyclerView(binding.recyclerviewHomePopular)
 
-        binding.tabLayoutPopularIndicator.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab?) {}
-            override fun onTabUnselected(tab: TabLayout.Tab?) {}
-            override fun onTabReselected(tab: TabLayout.Tab?) {}
-        })
 
         binding.recyclerviewHomePopular.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
@@ -397,7 +392,7 @@ class HomeMainFragment : Fragment() {
 
                     // Add shadow to root and hide original item
                     binding.rootFrameLayout.addView(dragShadow, dragShadowLP)
-                    draggedItemView!!.visibility = View.INVISIBLE
+                    draggedItemView!!.alpha = 0.4f // Make it partially transparent instead of invisible
                 }
             }
 
@@ -405,20 +400,31 @@ class HomeMainFragment : Fragment() {
                 c: Canvas, recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder,
                 dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean
             ) {
-                if (actionState == ItemTouchHelper.ACTION_STATE_DRAG && isCurrentlyActive && dragShadow != null) {
+                if (actionState == ItemTouchHelper.ACTION_STATE_DRAG && isCurrentlyActive && dragShadow != null && draggedItemView != null) {
+                    // Recalculate the position based on the RecyclerView's current position on the screen
+                    // and the item's position within the RecyclerView. This is more robust against re-layouts.
+                    val rvLocation = IntArray(2)
+                    recyclerView.getLocationOnScreen(rvLocation)
+                    val rvLeft = rvLocation[0]
+                    val rvTop = rvLocation[1]
+
+                    val newLeft = rvLeft + viewHolder.itemView.left + dX
+                    val newTop = rvTop + viewHolder.itemView.top + dY
+
                     // Update drag shadow position
                     dragShadowLP?.let {
-                        it.leftMargin = (initialX + dX).toInt()
-                        it.topMargin = (initialY + dY).toInt()
+                        it.leftMargin = newLeft.toInt()
+                        it.topMargin = newTop.toInt()
                         dragShadow!!.layoutParams = it
                     }
 
-                    // Find target and highlight
-                    val shadowCenterX = (initialX + dX + draggedItemView!!.width / 2).toInt()
-                    val shadowCenterY = (initialY + dY + draggedItemView!!.height / 2).toInt()
+                    // Find target and highlight using the new, correct coordinates
+                    val shadowCenterX = (newLeft + draggedItemView!!.width / 2).toInt()
+                    val shadowCenterY = (newTop + draggedItemView!!.height / 2).toInt()
                     val currentTarget = findTargetRecyclerView(shadowCenterX, shadowCenterY)
                     lastTargetRecyclerView = currentTarget
 
+                    // Highlighting logic remains the same
                     binding.recyclerviewHomeShortcuts.setBackgroundColor(
                         if (currentTarget == binding.recyclerviewHomeShortcuts && currentTarget.adapter != sourceAdapter) "#E0E0E0".toColorInt() else Color.TRANSPARENT
                     )
@@ -426,6 +432,7 @@ class HomeMainFragment : Fragment() {
                         if (currentTarget == binding.recyclerviewHiddenShortcuts && currentTarget.adapter != sourceAdapter) "#E0E0E0".toColorInt() else Color.TRANSPARENT
                     )
                 } else {
+                    // Fallback to default behavior if not dragging or no shadow
                     super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
                 }
             }
@@ -433,10 +440,12 @@ class HomeMainFragment : Fragment() {
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
 
-                // Remove shadow and show original item
+                // Set alpha back to full
+                viewHolder.itemView.alpha = 1.0f
+
+                // Remove custom shadow
                 dragShadow?.let { binding.rootFrameLayout.removeView(it) }
                 dragShadow = null
-                draggedItemView?.visibility = View.VISIBLE
 
                 binding.recyclerviewHomeShortcuts.setBackgroundColor(Color.TRANSPARENT)
                 binding.recyclerviewHiddenShortcuts.setBackgroundColor(Color.TRANSPARENT)
@@ -497,6 +506,12 @@ class HomeMainFragment : Fragment() {
                             updatedList.forEach { _ ->
                                 binding.tabLayoutPopularIndicator.addTab(binding.tabLayoutPopularIndicator.newTab())
                             }
+
+                            val tabStrip = binding.tabLayoutPopularIndicator.getChildAt(0) as ViewGroup
+                            for (i in 0 until tabStrip.childCount) {
+                                tabStrip.getChildAt(i).setOnTouchListener { _, _ -> true }
+                            }
+
                             if (binding.tabLayoutPopularIndicator.selectedTabPosition == -1 || binding.tabLayoutPopularIndicator.selectedTabPosition >= updatedList.size) {
                                 binding.tabLayoutPopularIndicator.getTabAt(0)?.select()
                             }
