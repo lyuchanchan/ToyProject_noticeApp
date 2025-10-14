@@ -34,7 +34,7 @@ class FragmentNotificationMain : Fragment() {
     private enum class SortOrder {
         VIEWS, LATEST, OLDEST
     }
-    private var currentSortOrder = SortOrder.VIEWS
+    private var currentSortOrder = SortOrder.LATEST
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentNotificationMainBinding.inflate(inflater, container, false)
@@ -50,15 +50,11 @@ class FragmentNotificationMain : Fragment() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        if (args.categoryName == "인기글") {
-            inflater.inflate(R.menu.menu_sort, menu)
-        }
+        inflater.inflate(R.menu.menu_sort, menu)
         super.onCreateOptionsMenu(menu, inflater)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // ❗️ 1. 뒤로가기 버튼 문제 해결
-        // SupportActionBar로 설정된 툴바의 뒤로가기(home) 버튼 클릭을 처리합니다.
         if (item.itemId == android.R.id.home) {
             findNavController().navigateUp()
             return true
@@ -86,10 +82,10 @@ class FragmentNotificationMain : Fragment() {
         var query: Query = db.collection(collectionPath)
 
         if (categoryToShow != "인기글") {
-            // 인기글이 아닐 때만 쿼리 조건 적용
             if (categoryToShow != "전체") {
                 query = query.whereEqualTo("category", categoryToShow)
             }
+            // 데이터를 ID 순서대로 가져옵니다.
             query = query.orderBy("id", Query.Direction.DESCENDING)
         }
 
@@ -107,18 +103,10 @@ class FragmentNotificationMain : Fragment() {
         val toolbarTitle = if (args.categoryName == "인기글") "Now! 인기글" else args.categoryName
         binding.toolbarNotificationMain.toolbar.title = toolbarTitle
 
-        // '인기글' 페이지일 때만 SupportActionBar로 설정하여 메뉴를 표시
-        if (args.categoryName == "인기글" && activity is AppCompatActivity) {
-            (activity as AppCompatActivity).setSupportActionBar(binding.toolbarNotificationMain.toolbar)
-            // ❗️ SupportActionBar를 설정한 후 뒤로가기 아이콘을 표시
-            (activity as AppCompatActivity).supportActionBar?.setDisplayHomeAsUpEnabled(true)
-            (activity as AppCompatActivity).supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_arrow_back)
-        } else {
-            // 그 외 페이지에서는 기존 방식으로 뒤로가기 버튼 설정
-            binding.toolbarNotificationMain.toolbar.setNavigationIcon(R.drawable.ic_arrow_back)
-            binding.toolbarNotificationMain.toolbar.setNavigationOnClickListener {
-                findNavController().navigateUp()
-            }
+        (activity as? AppCompatActivity)?.let {
+            it.setSupportActionBar(binding.toolbarNotificationMain.toolbar)
+            it.supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            it.supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_arrow_back)
         }
     }
 
@@ -153,17 +141,11 @@ class FragmentNotificationMain : Fragment() {
     }
 
     private fun sortAndDisplayList() {
-        if (args.categoryName != "인기글") {
-            notificationAdapter.submitList(allNotifications)
-            return
-        }
-
-        // ❗️ 2. 정렬 오류 해결
-        // 'id' 대신 'date'를 기준으로 정렬합니다.
         val sortedList = when (currentSortOrder) {
             SortOrder.VIEWS -> allNotifications.sortedByDescending { it.viewCount }
-            SortOrder.LATEST -> allNotifications.sortedByDescending { it.date }
-            SortOrder.OLDEST -> allNotifications.sortedBy { it.date }
+            // ID를 기준으로 최신/오래된 순 정렬
+            SortOrder.LATEST -> allNotifications.sortedByDescending { it.id }
+            SortOrder.OLDEST -> allNotifications.sortedBy { it.id }
         }
 
         notificationAdapter.submitList(sortedList) {
@@ -171,7 +153,6 @@ class FragmentNotificationMain : Fragment() {
         }
     }
 
-    // ... (openInAppBrowser, updateFavoriteStatus, onDestroyView 함수는 기존과 동일)
     private fun openInAppBrowser(url: String) {
         if (url.isNotEmpty()) {
             try {
@@ -216,9 +197,7 @@ class FragmentNotificationMain : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        if (activity is AppCompatActivity) {
-            (activity as AppCompatActivity).setSupportActionBar(null)
-        }
+        (activity as? AppCompatActivity)?.setSupportActionBar(null)
         _binding = null
     }
 }

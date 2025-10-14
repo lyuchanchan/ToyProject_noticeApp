@@ -9,14 +9,14 @@
         app:showAsAction="ifRoom">
         <menu>
             <item
-                android:id="@+id/sort_by_views"
-                android:title="조회수" />
-            <item
                 android:id="@+id/sort_by_latest"
-                android:title="최근 순" />
+                android:title="최근순" />
             <item
                 android:id="@+id/sort_by_oldest"
-                android:title="오래된 순" />
+                android:title="오래된순" />
+            <item
+                android:id="@+id/sort_by_views"
+                android:title="조회순" />
         </menu>
     </item>
 </menu>
